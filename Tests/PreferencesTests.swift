@@ -15,6 +15,8 @@ struct PreferencesTests {
         #expect(preferences.widgetVisible)
         #expect(preferences.widgetOnAllSpaces)
         #expect(!preferences.launchAtLogin)
+        #expect(!preferences.widgetCollapsed)
+        #expect(preferences.widgetAlwaysOnTop)
     }
 
     @Test func changesAreWrittenImmediatelyAndReadBack() throws {
@@ -24,6 +26,10 @@ struct PreferencesTests {
         preferences.widgetVisible = false
         preferences.widgetOnAllSpaces = false
         preferences.launchAtLogin = true
+        preferences.widgetCollapsed = true
+        preferences.widgetAlwaysOnTop = false
+        #expect(defaults.bool(forKey: "widgetCollapsed"))
+        #expect(defaults.bool(forKey: "widgetAlwaysOnTop") == false)
         #expect(defaults.bool(forKey: "widgetVisible") == false)
         #expect(defaults.bool(forKey: "widgetOnAllSpaces") == false)
         #expect(defaults.bool(forKey: "launchAtLogin"))
@@ -31,5 +37,7 @@ struct PreferencesTests {
         #expect(!reloaded.widgetVisible)
         #expect(!reloaded.widgetOnAllSpaces)
         #expect(reloaded.launchAtLogin)
+        #expect(reloaded.widgetCollapsed)
+        #expect(!reloaded.widgetAlwaysOnTop)
     }
 }

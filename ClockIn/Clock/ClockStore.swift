@@ -131,6 +131,7 @@ final class ClockStore {
         status = fetched
         fetchedAt = now()
         fetchVersion += 1
+        logger.notice("Status \(fetched.status.rawValue, privacy: .public): work \(fetched.workTimeElapsedSeconds, privacy: .public) s, break \(fetched.breakElapsedSeconds, privacy: .public) s, accumulated break \(fetched.accumulatedBreakSeconds, privacy: .public) s")
     }
 
     func adopt(summary fetched: WorkSummary) {

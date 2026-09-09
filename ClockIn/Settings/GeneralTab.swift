@@ -33,6 +33,7 @@ struct GeneralTab: View {
             }
             Section {
                 Toggle("Widget anzeigen", isOn: widgetVisible)
+                Toggle("Immer im Vordergrund", isOn: $preferences.widgetAlwaysOnTop)
                 Toggle("Auf allen Schreibtischen anzeigen", isOn: $preferences.widgetOnAllSpaces)
                 Button {
                     widget.resetPosition()
@@ -42,7 +43,7 @@ struct GeneralTab: View {
             } header: {
                 Text("Widget")
             } footer: {
-                Text("Das Widget lässt sich an jeder freien Stelle verschieben; die Position bleibt über Neustarts erhalten.")
+                Text("Ohne \"Immer im Vordergrund\" dürfen andere Fenster das Widget verdecken; ein Klick auf das Menüleisten-Symbol holt es nach vorn. Die Position bleibt über Neustarts erhalten.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

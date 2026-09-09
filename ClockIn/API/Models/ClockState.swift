@@ -9,7 +9,7 @@ enum ClockState: String, Codable, Sendable, Equatable {
     var germanLabel: String {
         switch self {
         case .idle: "Gestoppt"
-        case .running: "Läuft"
+        case .running: "Arbeit"
         case .paused: "Pause"
         case .waiting: "Wartet"
         }

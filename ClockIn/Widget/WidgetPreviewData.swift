@@ -30,6 +30,24 @@ extension ClockStore {
     }()
 }
 
+@MainActor
+private let previewPreferences: Preferences = {
+    guard let defaults = UserDefaults(suiteName: "app.clockin.preview") else {
+        preconditionFailure("Preview defaults suite could not be created")
+    }
+    return Preferences(defaults: defaults)
+}()
+
+@MainActor
+private let previewCollapsed: Preferences = {
+    guard let defaults = UserDefaults(suiteName: "app.clockin.preview.collapsed") else {
+        preconditionFailure("Preview defaults suite could not be created")
+    }
+    let preferences = Preferences(defaults: defaults)
+    preferences.widgetCollapsed = true
+    return preferences
+}()
+
 private struct PreviewTransport: HTTPTransport {
     func send(_ request: URLRequest) async throws -> HTTPResponse {
         throw TransportError(description: "Previews are offline")
@@ -46,38 +64,43 @@ private struct PreviewCredentialStore: CredentialStore {
     func delete() throws {}
 }
 
-#Preview("Läuft") {
-    WidgetView(store: .preview(state: .running), openSettings: {})
+#Preview("Arbeit") {
+    WidgetView(store: .preview(state: .running), preferences: previewPreferences, openSettings: {})
+        .padding()
+}
+
+#Preview("Eingeklappt") {
+    WidgetView(store: .preview(state: .running), preferences: previewCollapsed, openSettings: {})
         .padding()
 }
 
 #Preview("Pause") {
-    WidgetView(store: .preview(state: .paused, lastMessage: "Gespeichert: 7:30 (Pause 0:30)"), openSettings: {})
+    WidgetView(store: .preview(state: .paused, lastMessage: "Gespeichert: 7:30 (Pause 0:30)"), preferences: previewPreferences, openSettings: {})
         .padding()
 }
 
 #Preview("Gestoppt") {
-    WidgetView(store: .preview(state: .idle, lastError: "Keine Verbindung zu Timebutler."), openSettings: {})
+    WidgetView(store: .preview(state: .idle, lastError: "Keine Verbindung zu Timebutler."), preferences: previewPreferences, openSettings: {})
         .padding()
 }
 
 #Preview("Wartet") {
-    WidgetView(store: .preview(state: .waiting), openSettings: {})
+    WidgetView(store: .preview(state: .waiting), preferences: previewPreferences, openSettings: {})
         .padding()
 }
 
 #Preview("Pausenregelung") {
-    WidgetView(store: .preview(state: .running, pendingBreakRegulation: ClockStore.previewRegulation), openSettings: {})
+    WidgetView(store: .preview(state: .running, pendingBreakRegulation: ClockStore.previewRegulation), preferences: previewPreferences, openSettings: {})
         .padding()
 }
 
 #Preview("Abgelaufen") {
-    WidgetView(store: .preview(session: .expired), openSettings: {})
+    WidgetView(store: .preview(session: .expired), preferences: previewPreferences, openSettings: {})
         .padding()
 }
 
 #Preview("Nicht angemeldet") {
-    WidgetView(store: .preview(session: .notConfigured), openSettings: {})
+    WidgetView(store: .preview(session: .notConfigured), preferences: previewPreferences, openSettings: {})
         .padding()
 }
 #endif

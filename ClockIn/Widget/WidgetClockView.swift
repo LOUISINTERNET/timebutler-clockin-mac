@@ -29,21 +29,14 @@ struct WidgetClockView: View {
     }
 
     private func mainTime(now: Date) -> String {
-        switch status.status {
-        case .running, .waiting:
-            DurationFormatting.hoursMinutesSeconds(seconds: LiveClock.workSeconds(status: status, fetchedAt: fetchedAt, now: now))
-        case .paused:
-            DurationFormatting.hoursMinutesSeconds(seconds: LiveClock.breakSeconds(status: status, fetchedAt: fetchedAt, now: now))
-        case .idle:
-            summary.map { DurationFormatting.signedHoursMinutes(minutes: $0.workedMinutes) } ?? "–"
-        }
+        WidgetTimeText.main(status: status, summary: summary, fetchedAt: fetchedAt, now: now)
     }
 
     private func subline(now: Date) -> String {
         if status.status == .paused {
             return "Pause läuft · \(DurationFormatting.hoursMinutesSeconds(seconds: LiveClock.breakSeconds(status: status, fetchedAt: fetchedAt, now: now)))"
         }
-        if status.accumulatedBreakSeconds > 0 {
+        if status.accumulatedBreakSeconds >= 60 {
             return "Pause \(DurationFormatting.hoursMinutes(seconds: status.accumulatedBreakSeconds))"
         }
         return status.status.isActive ? "keine Pause" : "heute erfasst"

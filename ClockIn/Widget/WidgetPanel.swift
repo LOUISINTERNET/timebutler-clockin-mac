@@ -23,8 +23,10 @@ final class WidgetPanel: NSPanel {
         false
     }
 
-    /// FR-W2: dragging works on every spot without a control, SwiftUI areas included.
+    /// FR-W2: dragging works on every spot without a control, SwiftUI areas included. A
+    /// click also brings the panel to the front, which matters when it is not floating (FR-W9).
     override func mouseDown(with event: NSEvent) {
+        orderFrontRegardless()
         performDrag(with: event)
     }
 }

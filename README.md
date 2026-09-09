@@ -44,7 +44,7 @@ Personal tokens are the recommended way: they do not expire every few days and c
 
 ### Widget
 
-The widget shows the clock state (Gestoppt, Läuft, Pause, Wartet), the running time, today's target, actual and remaining time, and the buttons the current state allows. Drag it anywhere; its position survives a restart. When you stop a session that violates a break regulation, the widget shows Timebutler's proposal and lets you apply the correction, ignore it, or cancel the session.
+The widget shows the clock state (Gestoppt, Arbeit, Pause, Wartet), the running time, today's target, actual and remaining time, and the buttons the current state allows. The chevron in its header folds it to a single line with just the running time, like a collapsed sticky note. Drag it anywhere; its position and folded state survive a restart. When you stop a session that violates a break regulation, the widget shows Timebutler's proposal and lets you apply the correction, ignore it, or cancel the session.
 
 ### Menu bar
 
@@ -54,7 +54,7 @@ The widget shows the clock state (Gestoppt, Läuft, Pause, Wartet), the running 
 ### Settings
 
 - **Konto**: who is signed in, and sign out.
-- **Allgemein**: launch at login, show the widget, show it on all Spaces, reset its position.
+- **Allgemein**: launch at login, show the widget, keep it above every other window or let windows cover it, show it on all Spaces, reset its position.
 - **Info**: version and the link to the Timebutler API documentation.
 
 ## Build from source

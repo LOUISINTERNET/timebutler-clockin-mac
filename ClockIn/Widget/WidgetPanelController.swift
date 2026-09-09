@@ -17,16 +17,22 @@ final class WidgetPanelController {
         // A hosting controller, not a bare hosting view: `.preferredContentSize` only drives
         // the window through the content view controller. AppKit then keeps the top edge in
         // place when the content height changes with the clock state.
-        let controller = NSHostingController(rootView: WidgetView(store: store, openSettings: openSettings))
+        let controller = NSHostingController(rootView: WidgetView(store: store, preferences: preferences, openSettings: openSettings))
         controller.sizingOptions = [.preferredContentSize]
         panel.contentViewController = controller
         panel.setContentSize(controller.view.fittingSize)
-        if !panel.setFrameUsingName(Self.autosaveName) {
+        if panel.setFrameUsingName(Self.autosaveName) {
+            // The saved frame carries the size of the last state; only its top-left corner
+            // is wanted, the size always follows the current content.
+            let topLeft = NSPoint(x: panel.frame.minX, y: panel.frame.maxY)
+            panel.setContentSize(controller.view.fittingSize)
+            panel.setFrameTopLeftPoint(topLeft)
+        } else {
             resetPosition()
         }
         panel.setFrameAutosaveName(Self.autosaveName)
-        applyCollectionBehavior()
-        observeCollectionPreference()
+        applyWindowBehavior()
+        observeWindowPreferences()
     }
 
     func show() {
@@ -79,21 +85,27 @@ final class WidgetPanelController {
         }
     }
 
-    /// FR-W4: every Space and full-screen apps, or only the active Space.
-    private func applyCollectionBehavior() {
+    /// FR-W4: every Space and full-screen apps, or only the active Space. FR-W9: floating
+    /// above everything, or a normal window that other apps may cover.
+    private func applyWindowBehavior() {
         panel.collectionBehavior = preferences.widgetOnAllSpaces ? [.canJoinAllSpaces, .fullScreenAuxiliary] : [.moveToActiveSpace]
+        panel.level = preferences.widgetAlwaysOnTop ? .floating : .normal
+        if panel.isVisible {
+            panel.orderFrontRegardless()
+        }
     }
 
-    private func observeCollectionPreference() {
+    private func observeWindowPreferences() {
         withObservationTracking {
             _ = preferences.widgetOnAllSpaces
+            _ = preferences.widgetAlwaysOnTop
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self else {
                     return
                 }
-                self.applyCollectionBehavior()
-                self.observeCollectionPreference()
+                self.applyWindowBehavior()
+                self.observeWindowPreferences()
             }
         }
     }
