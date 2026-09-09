@@ -22,6 +22,11 @@ if [[ -z "$version" ]]; then
     exit 1
 fi
 
+if ! command -v create-dmg >/dev/null 2>&1; then
+    echo "create-dmg is missing. Install it once with: brew install create-dmg" >&2
+    exit 1
+fi
+
 if ! xcrun notarytool history --keychain-profile "$profile" >/dev/null 2>&1; then
     echo "Notarization profile '$profile' is missing. Create it once with:" >&2
     echo "  xcrun notarytool store-credentials $profile --apple-id <apple-id> --team-id A5278RL7RX --password <app-specific-password>" >&2
@@ -42,10 +47,22 @@ xcrun notarytool submit dist/ClockIn.zip --keychain-profile "$profile" --wait
 xcrun stapler staple "$app"
 
 echo "Building the disk image"
+# create-dmg lays out the familiar drag-to-Applications window: 660x420, app on the left,
+# Applications link on the right, arrow from installer/dmg-background.png.
 mkdir -p "$staging"
 cp -R "$app" "$staging/"
-ln -s /Applications "$staging/Applications"
-hdiutil create -volname "Clock In" -srcfolder "$staging" -format UDZO -ov "$dmg" >/dev/null
+create-dmg \
+    --volname "Clock In" \
+    --background installer/dmg-background.png \
+    --window-pos 200 120 \
+    --window-size 660 420 \
+    --icon-size 140 \
+    --icon "ClockIn.app" 180 150 \
+    --app-drop-link 480 150 \
+    --hide-extension "ClockIn.app" \
+    --no-internet-enable \
+    "$dmg" \
+    "$staging"
 codesign --force --timestamp --sign "$identity" "$dmg"
 
 echo "Notarizing the disk image"

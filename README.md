@@ -59,10 +59,10 @@ The widget shows the clock state (Gestoppt, Läuft, Pause, Wartet), the running 
 
 ## Build from source
 
-Requirements: Xcode 26, [xcodegen](https://github.com/yonaskolb/XcodeGen).
+Requirements: Xcode 26, [xcodegen](https://github.com/yonaskolb/XcodeGen), and [create-dmg](https://github.com/create-dmg/create-dmg) for `make release`.
 
 ```bash
-brew install xcodegen
+brew install xcodegen create-dmg
 git clone <repository-url> clock-in
 cd clock-in
 make build
