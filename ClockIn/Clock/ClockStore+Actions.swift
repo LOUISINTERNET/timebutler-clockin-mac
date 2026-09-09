@@ -18,6 +18,7 @@ extension ClockStore {
                 return
             }
             adopt(status: fetched)
+            pendingBreakRegulation = nil
             lastError = nil
             await reloadSummary()
         } catch {
@@ -42,10 +43,12 @@ extension ClockStore {
             }
             switch result {
             case .saved(let entry):
+                pendingBreakRegulation = nil
                 lastMessage = Self.savedMessage(for: entry)
             case .confirmationRequired(let regulation):
                 pendingBreakRegulation = regulation
             case .discarded:
+                pendingBreakRegulation = nil
                 lastMessage = Self.discardedMessage
             }
             lastError = nil
@@ -76,6 +79,8 @@ extension ClockStore {
     }
 
     /// EC-9: a click while a call is running is ignored, the buttons are disabled anyway.
+    /// A pending break-regulation card stays until the follow-up call succeeds, so a failure
+    /// is shown on the card and the user can decide again.
     private func beginAction(_ action: ClockAction) -> Bool {
         guard !isBusy else {
             logger.notice("Ignored \(action.rawValue, privacy: .public) while another call is running")
@@ -83,7 +88,6 @@ extension ClockStore {
         }
         isBusy = true
         lastMessage = nil
-        pendingBreakRegulation = nil
         return true
     }
 
