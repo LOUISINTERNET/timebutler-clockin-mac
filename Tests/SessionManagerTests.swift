@@ -77,6 +77,26 @@ struct SessionManagerTests {
         #expect(await transport.requests.count == 1)
     }
 
+    @Test func clientErrorDuringRefreshDoesNotExpire() async throws {
+        let store = InMemoryCredentialStore(.oauth(staleSession()))
+        let body = Data(#"{"error":"invalid_client","error_description":"Unknown client"}"#.utf8)
+        let (manager, _) = try makeManager(store: store, replies: [.raw(400, body)])
+        await #expect(throws: SessionError.oauth(status: 400, code: "invalid_client", description: "Unknown client")) {
+            try await manager.accessToken()
+        }
+        #expect(await manager.currentState() == .active(.oauth(email: "user@example.com")))
+    }
+
+    @Test func expiredSessionDoesNotRecoverFromUnauthorized() async throws {
+        let store = InMemoryCredentialStore(.oauth(staleSession()))
+        let (manager, transport) = try makeManager(store: store, replies: [.fixture(200, "oauth-token")])
+        await manager.markExpired()
+        await #expect(throws: SessionError.expired) {
+            try await manager.recoverFromUnauthorized()
+        }
+        #expect(await transport.requests.isEmpty)
+    }
+
     @Test func transportFailureDuringRefreshDoesNotExpire() async throws {
         let store = InMemoryCredentialStore(.oauth(staleSession()))
         let (manager, _) = try makeManager(store: store, replies: [.failure(TransportError(description: "offline")), .fixture(200, "oauth-token")])

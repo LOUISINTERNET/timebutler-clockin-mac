@@ -66,6 +66,16 @@ struct TimebutlerAPITests {
         #expect(await provider.recoverCalls == 1)
     }
 
+    @Test func secondUnauthorizedIsNotRetriedAgain() async throws {
+        let provider = FakeTokenProvider(token: "stale", recoveredToken: "fresh")
+        let (api, transport) = makeAPI([.raw(401, Data()), .raw(401, Data()), .fixture(200, "status-idle")], provider: provider)
+        await #expect(throws: APIError.http(status: 401, action: nil, detail: "")) {
+            try await api.status()
+        }
+        #expect(await transport.requests.count == 2)
+        #expect(await provider.recoverCalls == 1)
+    }
+
     @Test func unauthorizedWithoutRecoveryFails() async throws {
         let (api, transport) = makeAPI([.raw(401, Data())])
         await #expect(throws: APIError.http(status: 401, action: nil, detail: "")) {

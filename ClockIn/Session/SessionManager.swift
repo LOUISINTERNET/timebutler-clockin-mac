@@ -67,6 +67,9 @@ actor SessionManager: TokenProvider {
         guard let credentials else {
             throw SessionError.notConfigured
         }
+        if expired {
+            throw SessionError.expired
+        }
         switch credentials {
         case .apiToken:
             return nil

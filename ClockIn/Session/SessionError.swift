@@ -14,10 +14,11 @@ enum SessionError: Error, Equatable, Sendable, LocalizedError {
         userMessage
     }
 
-    /// A 400 from the token endpoint: the grant (password, code or refresh token) was rejected.
+    /// The token endpoint rejected the grant itself (password, code or refresh token). Other
+    /// 400s such as `invalid_client` are client bugs and must not expire the session.
     var isRejectedGrant: Bool {
-        if case .oauth(let status, _, _) = self {
-            return status == 400
+        if case .oauth(let status, let code, _) = self {
+            return status == 400 && code == "invalid_grant"
         }
         return false
     }

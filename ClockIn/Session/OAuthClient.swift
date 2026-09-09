@@ -125,7 +125,7 @@ private enum TokenEndpointResponse: Decodable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        if container.contains(.mfaRequired) {
+        if try container.decodeIfPresent(Bool.self, forKey: .mfaRequired) == true {
             self = .mfaChallenge(try MfaChallengeResponse(from: decoder))
         } else {
             self = .tokens(try OAuthTokenResponse(from: decoder))

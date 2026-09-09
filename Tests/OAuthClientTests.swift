@@ -76,6 +76,13 @@ struct OAuthClientTests {
         #expect(SessionError.expired.userMessage == "Sitzung abgelaufen. Bitte neu anmelden.")
     }
 
+    @Test func mfaRequiredFalseIsATokenResponse() async throws {
+        let body = Data(#"{"mfa_required":false,"access_token":"a","refresh_token":"r","token_type":"Bearer","expires_in":60,"scope":"read"}"#.utf8)
+        let (client, _) = makeClient([.raw(200, body)])
+        let result = try await client.signIn(email: "user@example.com", password: "s3cr3t")
+        #expect(result == .signedIn(OAuthSession(accessToken: "a", refreshToken: "r", expiresAt: now.addingTimeInterval(60), email: "user@example.com")))
+    }
+
     @Test func unreadableErrorBodyStillMapsByStatus() async throws {
         let (client, _) = makeClient([.raw(429, Data("<html>rate limited</html>".utf8))])
         await #expect(throws: SessionError.oauth(status: 429, code: "", description: "")) {
