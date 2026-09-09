@@ -7,8 +7,10 @@ extension WorkSummary {
         workedMinutes + liveWorkMinutes(status: status, fetchedAt: fetchedAt, now: now)
     }
 
+    /// Computed from commitment and worked time, not from the server's `remainingMinutes`:
+    /// Timebutler clamps that value at zero, which would hide overtime ("Plus", FR-C5).
     func remaining(including status: TimeClockStatus?, fetchedAt: Date, now: Date) -> Int {
-        remainingMinutes - liveWorkMinutes(status: status, fetchedAt: fetchedAt, now: now)
+        commitmentMinutes - worked(including: status, fetchedAt: fetchedAt, now: now)
     }
 
     /// Whole percent of the daily commitment, clamped to 0...100 for the progress bar.

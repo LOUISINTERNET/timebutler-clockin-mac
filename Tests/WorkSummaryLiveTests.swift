@@ -29,6 +29,13 @@ struct WorkSummaryLiveTests {
         #expect(overtime.percentDone(including: running, fetchedAt: fetchedAt, now: fetchedAt) == 100)
     }
 
+    @Test func overtimeShowsEvenWhenTheServerClampsRemainingAtZero() throws {
+        let idle = try Fixture.decode(TimeClockStatus.self, from: "status-idle")
+        let clamped = WorkSummary(commitmentMinutes: 480, workedMinutes: 501, remainingMinutes: 0, percentDone: 100, breakMinutes: 30)
+        #expect(clamped.remaining(including: idle, fetchedAt: fetchedAt, now: fetchedAt) == -21)
+        #expect(clamped.worked(including: idle, fetchedAt: fetchedAt, now: fetchedAt) == 501)
+    }
+
     @Test func zeroCommitmentFallsBackToServerPercent() throws {
         let running = try Fixture.decode(TimeClockStatus.self, from: "status-running")
         let noCommitment = WorkSummary(commitmentMinutes: 0, workedMinutes: 10, remainingMinutes: 0, percentDone: 150, breakMinutes: 0)
