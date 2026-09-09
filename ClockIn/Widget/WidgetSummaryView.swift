@@ -27,9 +27,22 @@ struct WidgetSummaryView: View {
                 column("Ist", DurationFormatting.signedHoursMinutes(minutes: worked))
                 column(remaining < 0 ? "Plus" : "Rest", DurationFormatting.signedHoursMinutes(minutes: abs(remaining)))
             }
-            ProgressView(value: Double(percent), total: 100)
-                .tint(status.status.color)
+            progressBar(percent: percent)
         }
+    }
+
+    /// Drawn by hand: a `ProgressView` renders grey in the never-key widget panel (D3).
+    private func progressBar(percent: Int) -> some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.primary.opacity(0.12))
+                Capsule()
+                    .fill(status.status.color)
+                    .frame(width: geometry.size.width * Double(percent) / 100)
+            }
+        }
+        .frame(height: 6)
     }
 
     private func column(_ label: String, _ value: String) -> some View {

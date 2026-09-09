@@ -3,6 +3,7 @@ import Foundation
 /// The clock actions of the widget (FR-C6 to FR-C10, EC-5, EC-9).
 extension ClockStore {
     static let discardedMessage = "Aufzeichnung verworfen."
+    static let tooShortMessage = "Unter einer Minute, Aufzeichnung verworfen."
 
     /// start, pause, resume and cancel: the answer is the new status, the summary is reloaded.
     func perform(_ action: ClockAction) async {
@@ -57,7 +58,40 @@ extension ClockStore {
             guard session == expected else {
                 return
             }
+            if case APIError.http(409, _, _) = error, isYoungerThanAMinute {
+                await discardYoungSession()
+                return
+            }
             await handle(error, during: .stop)
+        }
+    }
+
+    /// Timebutler saves entries of at least one minute only; a younger session is discarded
+    /// with `cancel` instead of making the user wait (FR-C8).
+    private var isYoungerThanAMinute: Bool {
+        guard let status, let fetchedAt, status.status != .waiting else {
+            return false
+        }
+        return LiveClock.workSeconds(status: status, fetchedAt: fetchedAt, now: now()) < 60
+    }
+
+    private func discardYoungSession() async {
+        logger.notice("Stop refused for a session under one minute, discarding it instead")
+        let expected = session
+        do {
+            let fetched = try await api.perform(.cancel)
+            guard session == expected else {
+                return
+            }
+            adopt(status: fetched)
+            lastError = nil
+            lastMessage = Self.tooShortMessage
+            await reloadSummary()
+        } catch {
+            guard session == expected else {
+                return
+            }
+            await handle(error, during: .cancel)
         }
     }
 

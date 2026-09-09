@@ -128,6 +128,31 @@ struct ClockStoreActionTests {
         #expect(harness.store.lastError == nil)
     }
 
+    @Test func stopConflictInTheFirstMinuteDiscardsTheSession() async throws {
+        let young = Data(#"{"status":"running","startTimestamp":1753700400000,"pauseTimestamp":null,"workTimeElapsedSeconds":14,"breakElapsedSeconds":0,"accumulatedBreakSeconds":0,"waitSeconds":null,"isBusinessTripActive":false,"startOnlyOnTerminal":false,"pauseOnlyOnTerminal":false,"stopOnlyOnTerminal":false}"#.utf8)
+        var routes = TestStore.running
+        routes["time-clock/status"] = [.raw(200, young)]
+        routes["time-clock/stop"] = [.raw(409, Data())]
+        routes["time-clock/cancel"] = [.fixture(200, "status-idle")]
+        routes["time-tracking/work-summary"] = [.fixture(200, "work-summary"), .fixture(200, "work-summary")]
+        let harness = try TestStore(credentials: .apiToken("tb_secret"), routes: routes)
+        await harness.store.start()
+        defer { harness.store.stopObserving() }
+        await harness.store.stop()
+        #expect(harness.store.lastError == nil)
+        #expect(harness.store.lastMessage == "Unter einer Minute, Aufzeichnung verworfen.")
+        #expect(harness.store.status?.status == .idle)
+        #expect(await harness.transport.requestCount(pathSuffix: "time-clock/cancel") == 1)
+    }
+
+    @Test func stopConflictOfAnOlderSessionIsReportedNotDiscarded() async throws {
+        let harness = try await startedStore(routes: ["time-clock/stop": [.raw(409, Data())], "time-clock/status": [.fixture(200, "status-running")], "time-tracking/work-summary": [.fixture(200, "work-summary")]])
+        defer { harness.store.stopObserving() }
+        await harness.store.stop()
+        #expect(harness.store.lastError == "Stempeluhr ist nicht aktiv, zu kurz (unter 1 Minute) oder doppelter Eintrag.")
+        #expect(await harness.transport.requestCount(pathSuffix: "time-clock/cancel") == 0)
+    }
+
     @Test func unauthorizedActionExpiresTheSession() async throws {
         let harness = try await startedStore(routes: ["time-clock/pause": [.raw(401, Data())]])
         defer { harness.store.stopObserving() }
