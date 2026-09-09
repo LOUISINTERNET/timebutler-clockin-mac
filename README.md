@@ -25,7 +25,7 @@ Clock In replaces an earlier internal solution built on an Übersicht widget and
 
 Requirements: macOS 26 (Tahoe) or newer, a Timebutler account with time tracking enabled.
 
-1. Download `ClockIn-<version>.dmg`.
+1. Download the latest `ClockIn-<version>.dmg` from the [releases page](https://github.com/LOUISINTERNET/timebutler-clockin-mac/releases/latest).
 2. Open the disk image and drag **Clock In** to **Applications**.
 3. Start Clock In. It has no Dock icon; look for the clock symbol in the menu bar and the widget in the top right corner of the screen.
 
@@ -63,8 +63,8 @@ Requirements: Xcode 26, [xcodegen](https://github.com/yonaskolb/XcodeGen), and [
 
 ```bash
 brew install xcodegen create-dmg
-git clone <repository-url> clock-in
-cd clock-in
+git clone git@github.com:LOUISINTERNET/timebutler-clockin-mac.git
+cd timebutler-clockin-mac
 make build
 ```
 
@@ -85,7 +85,7 @@ read -s TIMEBUTLER_API_TOKEN && export TIMEBUTLER_API_TOKEN && make test-live
 
 ## Release
 
-`make release` archives a Release build, signs it with the Developer ID, notarizes app and disk image, staples both and writes `dist/ClockIn-<version>.dmg`. It needs a notarization profile in the keychain, created once per Mac:
+Releases are built locally by the maintainer, not in CI, so the signing certificate never leaves a personal Mac. `make release` archives a Release build, signs it with the Developer ID, notarizes app and disk image, staples both and writes `dist/ClockIn-<version>.dmg`. It needs a notarization profile in the keychain, created once per Mac:
 
 ```bash
 xcrun notarytool store-credentials clockin-notary --apple-id <apple-id> --team-id A5278RL7RX --password <app-specific-password>

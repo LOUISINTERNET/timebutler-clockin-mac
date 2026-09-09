@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="de" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clock In — die Timebutler-Stempeluhr als Mac-App</title>
+  <meta name="description" content="Native macOS-App für die Timebutler-Stempeluhr: Start, Pause und Stopp aus einem schwebenden Widget, laufende Arbeitszeit in der Menüleiste, Zugangsdaten nur im Schlüsselbund." />
+
+  <meta property="og:title" content="Clock In — die Timebutler-Stempeluhr als Mac-App" />
+  <meta property="og:description" content="Start, Pause und Stopp ohne Browser. Laufende Arbeitszeit in der Menüleiste, schwebendes Widget, Zugangsdaten nur im Schlüsselbund." />
+  <meta property="og:image" content="https://louisinternet.github.io/timebutler-clockin-mac/icon-1024.png" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon-1024.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Inter', 'system-ui', 'sans-serif'],
+            display: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .glow {
+      background: radial-gradient(60% 60% at 50% 0%, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0) 70%);
+    }
+    .card-grad {
+      background: linear-gradient(180deg, rgba(0,0,0,0.015) 0%, rgba(0,0,0,0) 100%);
+    }
+    .shot {
+      background: linear-gradient(135deg, #3b5bdb 0%, #4c6ef5 100%);
+    }
+  </style>
+</head>
+<body class="bg-white text-neutral-900 font-sans antialiased">
+
+  <!-- Nav -->
+  <nav class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-2.5">
+      <img src="icon.png" alt="" class="w-8 h-8 rounded-lg" />
+      <span class="font-semibold tracking-tight">Clock In</span>
+    </a>
+    <div class="flex items-center gap-6 text-sm">
+      <a href="https://github.com/LOUISINTERNET/timebutler-clockin-mac/releases" class="text-neutral-600 hover:text-neutral-900 transition">Releases</a>
+      <a href="https://github.com/LOUISINTERNET/timebutler-clockin-mac" class="text-neutral-600 hover:text-neutral-900 transition flex items-center gap-1.5">
+        <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.89-.39.98 0 1.97.13 2.89.39 2.21-1.49 3.18-1.18 3.18-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.41-5.27 5.69.41.36.78 1.07.78 2.16v3.2c0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="relative overflow-hidden">
+    <div class="glow absolute inset-0 pointer-events-none"></div>
+    <div class="max-w-6xl mx-auto px-6 pt-16 pb-24 text-center relative">
+      <img src="icon-1024.png" alt="Clock In App-Icon" class="w-28 h-28 mx-auto mb-8 rounded-3xl drop-shadow-2xl" />
+      <h1 class="font-display text-5xl sm:text-6xl font-bold tracking-tight">
+        Die Timebutler-Stempeluhr,<br /><span class="text-emerald-600">immer im Blick.</span>
+      </h1>
+      <p class="mt-6 text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto">
+        Native macOS-App für die Stempeluhr von <a href="https://app.timebutler.com" class="text-neutral-900 underline decoration-neutral-300 hover:decoration-neutral-900">Timebutler</a>: Start, Pause und Stopp aus einem schwebenden Widget, die laufende Arbeitszeit in der Menüleiste, kein Browser-Tab mehr.
+      </p>
+
+      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a id="download-btn" href="https://github.com/LOUISINTERNET/timebutler-clockin-mac/releases/latest"
+           class="group inline-flex items-center gap-3 bg-neutral-900 text-white hover:bg-neutral-800 transition px-7 py-4 rounded-xl font-semibold shadow-lg shadow-emerald-500/10">
+          <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
+          <span class="flex flex-col items-start leading-tight">
+            <span class="text-xs text-white/60 font-normal">Download für macOS</span>
+            <span id="download-label">Neueste Version</span>
+          </span>
+        </a>
+        <a href="https://github.com/LOUISINTERNET/timebutler-clockin-mac"
+           class="group inline-flex items-center gap-3 border border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50 transition px-7 py-4 rounded-xl font-semibold text-neutral-900">
+          <svg viewBox="0 0 24 24" class="w-6 h-6 fill-current" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.27-1.69-1.27-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.89-.39.98 0 1.97.13 2.89.39 2.21-1.49 3.18-1.18 3.18-1.18.62 1.58.23 2.75.11 3.04.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.41-5.27 5.69.41.36.78 1.07.78 2.16v3.2c0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+          <span class="flex flex-col items-start leading-tight">
+            <span class="text-xs text-neutral-600 font-normal">Quellcode auf</span>
+            <span>GitHub</span>
+          </span>
+        </a>
+      </div>
+
+      <p class="mt-6 text-sm text-neutral-600">
+        macOS 26 (Tahoe) oder neuer · Apple Silicon und Intel · signiert und von Apple notarisiert
+      </p>
+      <p class="mt-2 text-sm text-neutral-600">
+        Braucht ein <strong class="text-neutral-900">Timebutler-Konto</strong> mit aktivierter Zeiterfassung.
+      </p>
+    </div>
+  </header>
+
+  <!-- Footer -->
+  <footer class="border-t border-neutral-200">
+    <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-neutral-600">
+      <div class="flex items-center gap-2.5">
+        <img src="icon.png" alt="" class="w-5 h-5 rounded" />
+        <span>Clock In — © LOUIS INTERNET — Inoffizielle App, nicht mit der Timebutler GmbH verbunden</span>
+      </div>
+      <div class="flex items-center gap-5">
+        <a href="https://github.com/LOUISINTERNET/timebutler-clockin-mac" class="hover:text-neutral-900 transition">GitHub</a>
+        <a href="https://github.com/LOUISINTERNET/timebutler-clockin-mac/releases" class="hover:text-neutral-900 transition">Releases</a>
+        <a href="https://github.com/LOUISINTERNET/timebutler-clockin-mac/issues" class="hover:text-neutral-900 transition">Issues</a>
+        <a href="https://app.timebutler.com/api/v2/docs" class="hover:text-neutral-900 transition">Timebutler-API</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Resolve the newest DMG from the GitHub release API so the button names version and
+    // size. Falls back to /releases/latest when the API is unreachable or rate-limited.
+    (async () => {
+      const API = 'https://api.github.com/repos/LOUISINTERNET/timebutler-clockin-mac/releases/latest';
+      const labels = document.querySelectorAll('[id^="download-label"]');
+      const buttons = document.querySelectorAll('[id^="download-btn"]');
+      try {
+        const response = await fetch(API, { headers: { Accept: 'application/vnd.github+json' } });
+        if (!response.ok) throw new Error(`Release fetch ${response.status}`);
+        const release = await response.json();
+        const asset = (release.assets || []).find(item => item.name.endsWith('.dmg'));
+        if (!asset) throw new Error('No DMG asset in the latest release');
+        const sizeMb = (asset.size / (1024 * 1024)).toFixed(1);
+        labels.forEach(el => (el.textContent = `${release.tag_name} · ${sizeMb} MB`));
+        buttons.forEach(el => (el.href = asset.browser_download_url));
+      } catch (error) {
+        console.warn('Falling back to /releases/latest:', error);
+      }
+    })();
+  </script>
+</body>
+</html>
