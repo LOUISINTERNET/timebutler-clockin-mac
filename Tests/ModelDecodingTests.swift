@@ -70,7 +70,13 @@ struct ModelDecodingTests {
 
     @Test func savedStopResponseDecodesEntry() throws {
         let response = try Fixture.decode(TimeClockStopResponse.self, from: "stop-saved")
-        #expect(response == .saved(SavedTimeEntry(id: "98765", workedMinutes: 450, breakMinutes: 30, breakRegulationApplied: true, breakRegulationIgnored: false)))
+        #expect(response == .saved(SavedTimeEntry(workedMinutes: 450, breakMinutes: 30, breakRegulationApplied: true, breakRegulationIgnored: false)))
+    }
+
+    @Test func savedStopResponseWithoutDetailsDecodes() throws {
+        let data = Data(#"{"outcome":"saved","id":98765}"#.utf8)
+        let response = try JSONDecoder().decode(TimeClockStopResponse.self, from: data)
+        #expect(response == .saved(SavedTimeEntry(workedMinutes: nil, breakMinutes: nil, breakRegulationApplied: nil, breakRegulationIgnored: nil)))
     }
 
     @Test func confirmationStopResponseDecodesRegulation() throws {

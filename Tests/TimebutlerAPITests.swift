@@ -118,7 +118,7 @@ struct TimebutlerAPITests {
         #expect(APIError.http(status: 403, action: .stop, detail: "").userMessage == "Stoppen ist nur am Terminal erlaubt.")
         #expect(APIError.http(status: 409, action: .pause, detail: "").userMessage == "Stempeluhr läuft nicht.")
         #expect(APIError.http(status: 409, action: .resume, detail: "").userMessage == "Stempeluhr ist nicht pausiert.")
-        #expect(APIError.http(status: 409, action: .stop, detail: "").userMessage == "Zu kurz (unter 1 Minute) oder doppelter Eintrag.")
+        #expect(APIError.http(status: 409, action: .stop, detail: "").userMessage == "Stempeluhr ist nicht aktiv, zu kurz (unter 1 Minute) oder doppelter Eintrag.")
         #expect(APIError.http(status: 409, action: .cancel, detail: "").userMessage == "Stempeluhr ist bereits gestoppt.")
         #expect(APIError.http(status: 429, action: nil, detail: "").userMessage == "Zu viele Anfragen. Kurz warten.")
         #expect(APIError.http(status: 500, action: nil, detail: "").userMessage == "Timebutler meldet einen Serverfehler.")

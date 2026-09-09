@@ -3,7 +3,9 @@ import Foundation
 /// The one place that turns thrown errors into `lastError` and follow-up actions (D10).
 extension ClockStore {
     /// Records the German message in `lastError` and performs the follow-up the
-    /// requirements demand for the failure (FR-C10, FR-C12, FR-S5).
+    /// requirements demand for the failure (FR-C10, FR-C12, FR-S5). After a failed action
+    /// the server may have changed state anyway (an answer that could not be decoded, a
+    /// conflict), so the status is reloaded unless the request never reached the server.
     func handle(_ error: any Error, during action: ClockAction?) async {
         if error is CancellationError {
             logger.notice("Call cancelled by a session change")
@@ -15,6 +17,8 @@ extension ClockStore {
         switch error {
         case APIError.http(let code, _, _):
             await react(toHTTPStatus: code, action: action)
+        case APIError.unreadableResponse where action != nil:
+            await reloadStatusAfterActionFailure()
         case SessionError.expired:
             await synchronizeSession()
         default:
@@ -41,7 +45,7 @@ extension ClockStore {
             await sessionManager.markExpired()
             await synchronizeSession()
         case 409 where action != nil:
-            await reloadStatusAfterConflict()
+            await reloadStatusAfterActionFailure()
         case 429:
             pollingSkipRequested = true
         default:
@@ -49,8 +53,8 @@ extension ClockStore {
         }
     }
 
-    /// FR-C10: after a conflict the buttons must match reality; `lastError` stays visible.
-    private func reloadStatusAfterConflict() async {
+    /// FR-C10: after a failed action the buttons must match reality; `lastError` stays visible.
+    private func reloadStatusAfterActionFailure() async {
         let expected = session
         let version = currentFetchVersion
         do {
@@ -59,8 +63,24 @@ extension ClockStore {
                 return
             }
             adopt(status: fetched)
+            await reloadSummaryAfterActionFailure()
         } catch {
-            logger.error("Status reload after conflict failed: \(String(describing: error), privacy: .private)")
+            logger.error("Status reload after a failed action failed: \(String(describing: error), privacy: .private)")
+        }
+    }
+
+    /// A saved stop changes today's totals even when its answer was unreadable.
+    private func reloadSummaryAfterActionFailure() async {
+        let expected = session
+        let version = currentFetchVersion
+        do {
+            let fetched = try await api.workSummary()
+            guard session == expected, currentFetchVersion == version else {
+                return
+            }
+            adopt(summary: fetched)
+        } catch {
+            logger.error("Work summary reload after a failed action failed: \(String(describing: error), privacy: .private)")
         }
     }
 }

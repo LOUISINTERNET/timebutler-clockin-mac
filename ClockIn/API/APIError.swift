@@ -47,7 +47,7 @@ enum APIError: Error, Equatable, Sendable, LocalizedError {
         case .start: "Stempeluhr läuft schon."
         case .pause: "Stempeluhr läuft nicht."
         case .resume: "Stempeluhr ist nicht pausiert."
-        case .stop: "Zu kurz (unter 1 Minute) oder doppelter Eintrag."
+        case .stop: "Stempeluhr ist nicht aktiv, zu kurz (unter 1 Minute) oder doppelter Eintrag."
         case .cancel: "Stempeluhr ist bereits gestoppt."
         case nil: "Aktion im aktuellen Zustand nicht möglich."
         }

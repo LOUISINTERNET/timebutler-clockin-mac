@@ -92,6 +92,19 @@ struct ClockStoreActionTests {
         #expect(harness.store.status?.status == .idle)
     }
 
+    @Test func unreadableStopAnswerStillReloadsStatusAndSummary() async throws {
+        let harness = try await startedStore(routes: [
+            "time-clock/stop": [.raw(200, Data("{\"outcome\":\"saved\",\"workedMinutes\":\"eight hours\"}".utf8))],
+            "time-clock/status": [.fixture(200, "status-idle")],
+            "time-tracking/work-summary": [.raw(200, laterSummary)],
+        ])
+        defer { harness.store.stopObserving() }
+        await harness.store.stop()
+        #expect(harness.store.lastError == "Antwort von Timebutler nicht lesbar.")
+        #expect(harness.store.status?.status == .idle)
+        #expect(harness.store.summary?.workedMinutes == 200)
+    }
+
     @Test func conflictShowsMessageAndReloadsStatus() async throws {
         let harness = try await startedStore(status: "status-idle", routes: ["time-clock/start": [.raw(409, Data("already running".utf8))], "time-clock/status": [.fixture(200, "status-running")]])
         defer { harness.store.stopObserving() }
@@ -139,9 +152,10 @@ struct ClockStoreActionTests {
     }
 
     @Test(arguments: [
-        (SavedTimeEntry(id: "1", workedMinutes: 450, breakMinutes: 30, breakRegulationApplied: true, breakRegulationIgnored: false), "Gespeichert: 7:30 (Pause 0:30), korrigiert"),
-        (SavedTimeEntry(id: "2", workedMinutes: 60, breakMinutes: 0, breakRegulationApplied: false, breakRegulationIgnored: false), "Gespeichert: 1:00"),
-        (SavedTimeEntry(id: "3", workedMinutes: 605, breakMinutes: 45, breakRegulationApplied: false, breakRegulationIgnored: true), "Gespeichert: 10:05 (Pause 0:45)"),
+        (SavedTimeEntry(workedMinutes: 450, breakMinutes: 30, breakRegulationApplied: true, breakRegulationIgnored: false), "Gespeichert: 7:30 (Pause 0:30), korrigiert"),
+        (SavedTimeEntry(workedMinutes: 60, breakMinutes: 0, breakRegulationApplied: false, breakRegulationIgnored: false), "Gespeichert: 1:00"),
+        (SavedTimeEntry(workedMinutes: 605, breakMinutes: 45, breakRegulationApplied: nil, breakRegulationIgnored: true), "Gespeichert: 10:05 (Pause 0:45)"),
+        (SavedTimeEntry(workedMinutes: nil, breakMinutes: nil, breakRegulationApplied: nil, breakRegulationIgnored: nil), "Gespeichert."),
     ])
     func savedMessageFollowsTheFormat(entry: SavedTimeEntry, expected: String) {
         #expect(ClockStore.savedMessage(for: entry) == expected)

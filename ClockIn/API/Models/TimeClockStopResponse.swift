@@ -1,10 +1,13 @@
 /// The saved time entry returned by `POST /time-clock/stop` with `outcome: saved`.
+///
+/// Every detail is optional: the OpenAPI spec lists no required fields, and the
+/// predecessor widget saw answers without `workedMinutes` in production (EC-11). The
+/// entry id is not decoded because the app has no use for it and its type is unreliable.
 struct SavedTimeEntry: Decodable, Sendable, Equatable {
-    let id: String
-    let workedMinutes: Int
-    let breakMinutes: Int
-    let breakRegulationApplied: Bool
-    let breakRegulationIgnored: Bool
+    let workedMinutes: Int?
+    let breakMinutes: Int?
+    let breakRegulationApplied: Bool?
+    let breakRegulationIgnored: Bool?
 }
 
 /// `TimeClockStopResponse`, modelled as the union it is: the entry fields exist only

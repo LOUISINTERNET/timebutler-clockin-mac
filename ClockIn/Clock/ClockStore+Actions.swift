@@ -66,13 +66,17 @@ extension ClockStore {
         pendingBreakRegulation = nil
     }
 
-    /// "Gespeichert: 7:30 (Pause 0:30), korrigiert" (FR-C8).
+    /// "Gespeichert: 7:30 (Pause 0:30), korrigiert" (FR-C8), or just "Gespeichert." when
+    /// Timebutler sends no details.
     static func savedMessage(for entry: SavedTimeEntry) -> String {
-        var message = "Gespeichert: \(DurationFormatting.signedHoursMinutes(minutes: entry.workedMinutes))"
-        if entry.breakMinutes > 0 {
-            message += " (Pause \(DurationFormatting.signedHoursMinutes(minutes: entry.breakMinutes)))"
+        guard let workedMinutes = entry.workedMinutes else {
+            return "Gespeichert."
         }
-        if entry.breakRegulationApplied {
+        var message = "Gespeichert: \(DurationFormatting.signedHoursMinutes(minutes: workedMinutes))"
+        if let breakMinutes = entry.breakMinutes, breakMinutes > 0 {
+            message += " (Pause \(DurationFormatting.signedHoursMinutes(minutes: breakMinutes)))"
+        }
+        if entry.breakRegulationApplied == true {
             message += ", korrigiert"
         }
         return message
