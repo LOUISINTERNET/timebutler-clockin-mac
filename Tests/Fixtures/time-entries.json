@@ -1,0 +1,5 @@
+[
+  {"id": "3", "date": "2027-01-15", "startTime": "13:02", "endTime": null, "workedMinutes": 0, "breakMinutes": 0, "status": "editing", "autoStopped": false},
+  {"id": "2", "date": "2027-01-15", "startTime": "08:37", "endTime": "12:15", "workedMinutes": 218, "breakMinutes": 0, "status": "done", "autoStopped": false},
+  {"id": "1", "date": "2027-01-14", "startTime": "07:55", "endTime": "16:30", "workedMinutes": 480, "breakMinutes": 35, "status": "approved", "autoStopped": false}
+]

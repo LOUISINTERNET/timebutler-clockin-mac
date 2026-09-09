@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// FR-C2: coloured dot, state label, "seit HH:MM" while a session is active, and the
-/// chevron that folds the widget (FR-W8).
+/// FR-C2: coloured dot, state label, "seit HH:MM (first start of the day)" while a session
+/// is active, and the chevron that folds the widget (FR-W8).
 struct WidgetHeaderView: View {
     let status: TimeClockStatus
+    let firstStart: String?
     let preferences: Preferences
 
     var body: some View {
@@ -15,7 +16,7 @@ struct WidgetHeaderView: View {
                 .font(.headline)
             Spacer()
             if status.status.isActive, let start = status.startTimestamp {
-                Text("seit \(DurationFormatting.clockTime(millisecondsSince1970: start))")
+                Text(DayStart.sinceText(prefix: "seit", currentStart: start, firstStart: firstStart))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

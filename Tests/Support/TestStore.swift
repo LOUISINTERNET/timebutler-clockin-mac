@@ -10,6 +10,7 @@ struct TestStore {
         "time-clock/status": [.fixture(200, "status-running")],
         "time-tracking/work-summary": [.fixture(200, "work-summary")],
         "user/profile": [.fixture(200, "profile")],
+        "time-entries/my": [.fixture(200, "time-entries")],
     ]
 
     let store: ClockStore

@@ -25,9 +25,10 @@ struct WidgetTimeTextTests {
         let running = try Fixture.decode(TimeClockStatus.self, from: "status-running")
         let paused = try Fixture.decode(TimeClockStatus.self, from: "status-paused")
         let idle = try Fixture.decode(TimeClockStatus.self, from: "status-idle")
-        #expect(WidgetCompactView.since(status: running) == "seit \(DurationFormatting.clockTime(millisecondsSince1970: 1_753_700_400_000))")
-        #expect(WidgetCompactView.since(status: paused) == "Pause seit \(DurationFormatting.clockTime(millisecondsSince1970: 1_753_714_800_000))")
-        #expect(WidgetCompactView.since(status: idle) == "heute erfasst")
+        #expect(WidgetCompactView.since(status: running, firstStart: nil) == "seit \(DurationFormatting.clockTime(millisecondsSince1970: 1_753_700_400_000))")
+        #expect(WidgetCompactView.since(status: running, firstStart: "06:15") == "seit \(DurationFormatting.clockTime(millisecondsSince1970: 1_753_700_400_000)) (06:15)")
+        #expect(WidgetCompactView.since(status: paused, firstStart: nil) == "Pause seit \(DurationFormatting.clockTime(millisecondsSince1970: 1_753_714_800_000))")
+        #expect(WidgetCompactView.since(status: idle, firstStart: "06:15") == "heute erfasst")
         #expect(DurationFormatting.clockTime(millisecondsSince1970: 1_753_714_800_000, timeZone: berlin) == "17:00")
     }
 

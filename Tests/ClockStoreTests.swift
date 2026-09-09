@@ -14,7 +14,8 @@ struct ClockStoreTests {
         #expect(store.profile?.name == "Maria Müller")
         #expect(store.fetchedAt == TestStore.now)
         #expect(store.lastError == nil)
-        #expect(await harness.transport.requests.count == 3)
+        #expect(store.firstStartToday == "08:37")
+        #expect(await harness.transport.requests.count == 4)
     }
 
     @Test func noCredentialsMeansNoRequests() async throws {
@@ -92,7 +93,7 @@ struct ClockStoreTests {
         await harness.transport.route("time-clock/pause", [.fixture(200, "status-paused")])
         await harness.transport.holdNextReply()
         let poll = Task { await store.refresh() }
-        await harness.transport.waitForRequests(count: 4)
+        await harness.transport.waitForRequests(count: 5)
         await store.perform(.pause)
         #expect(store.status?.status == .paused)
         await harness.transport.releaseHeldReply()

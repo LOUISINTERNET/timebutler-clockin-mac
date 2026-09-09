@@ -8,32 +8,28 @@ struct WidgetView: View {
     let openSettings: () -> Void
 
     var body: some View {
-        content
-            .padding(isCompact ? 12 : 16)
-            .frame(width: 260)
+        let layout = WidgetLayout.resolve(session: store.session, collapsed: preferences.widgetCollapsed, status: store.status, hasPendingBreakRegulation: store.pendingBreakRegulation != nil, lastError: store.lastError)
+        content(for: layout)
+            .padding(layout == .face || layout == .breakRegulation || layout == .signedOut ? 16 : 12)
+            .frame(width: layout == .square ? nil : 260)
             .glassEffect(.regular, in: .rect(cornerRadius: 20))
     }
 
-    /// Folded only while signed in and no break-regulation card needs its buttons.
-    private var isCompact: Bool {
-        preferences.widgetCollapsed && store.session.isActive && store.pendingBreakRegulation == nil
-    }
-
     @ViewBuilder
-    private var content: some View {
-        switch store.session {
-        case .notConfigured:
-            WidgetSignedOutView(message: "Nicht angemeldet.", openSettings: openSettings)
-        case .expired:
-            WidgetSignedOutView(message: "Sitzung abgelaufen. Bitte neu anmelden.", openSettings: openSettings)
-        case .active:
+    private func content(for layout: WidgetLayout) -> some View {
+        switch layout {
+        case .signedOut:
+            WidgetSignedOutView(message: store.session == .expired ? "Sitzung abgelaufen. Bitte neu anmelden." : "Nicht angemeldet.", openSettings: openSettings)
+        case .breakRegulation:
             if let regulation = store.pendingBreakRegulation {
                 BreakRegulationView(regulation: regulation, store: store)
-            } else if preferences.widgetCollapsed {
-                WidgetCompactView(status: store.status, summary: store.summary, fetchedAt: store.fetchedAt, lastError: store.lastError, preferences: preferences)
-            } else {
-                clockFace
             }
+        case .square:
+            WidgetSquareView(store: store, preferences: preferences)
+        case .line:
+            WidgetCompactView(store: store, preferences: preferences)
+        case .face:
+            clockFace
         }
     }
 
@@ -41,7 +37,7 @@ struct WidgetView: View {
     private var clockFace: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let status = store.status, let fetchedAt = store.fetchedAt {
-                WidgetHeaderView(status: status, preferences: preferences)
+                WidgetHeaderView(status: status, firstStart: store.firstStartToday, preferences: preferences)
                 WidgetClockView(status: status, summary: store.summary, fetchedAt: fetchedAt)
                 if let summary = store.summary {
                     WidgetSummaryView(summary: summary, status: status, fetchedAt: fetchedAt)

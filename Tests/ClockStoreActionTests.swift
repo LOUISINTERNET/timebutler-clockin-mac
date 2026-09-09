@@ -119,7 +119,7 @@ struct ClockStoreActionTests {
         defer { harness.store.stopObserving() }
         await harness.transport.holdNextReply()
         let pause = Task { await harness.store.perform(.pause) }
-        await harness.transport.waitForRequests(count: 4)
+        await harness.transport.waitForRequests(count: 5)
         await harness.store.signOut()
         await harness.transport.releaseHeldReply()
         await pause.value
@@ -166,7 +166,7 @@ struct ClockStoreActionTests {
         defer { harness.store.stopObserving() }
         await harness.transport.holdNextReply()
         let first = Task { await harness.store.perform(.pause) }
-        await harness.transport.waitForRequests(count: 4)
+        await harness.transport.waitForRequests(count: 5)
         #expect(harness.store.isBusy)
         await harness.store.perform(.pause)
         await harness.transport.releaseHeldReply()

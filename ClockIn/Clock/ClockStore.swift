@@ -16,6 +16,8 @@ final class ClockStore {
     var session: SessionState = .notConfigured
     var status: TimeClockStatus?
     var summary: WorkSummary?
+    /// "08:37": the day's first clock-in from the saved entries, nil without one (FR-C2).
+    var firstStartToday: String?
     var fetchedAt: Date?
     var profile: UserProfile?
     var pendingBreakRegulation: BreakRegulation?
@@ -81,6 +83,7 @@ final class ClockStore {
         var version = fetchVersion
         async let statusCall = api.status()
         async let summaryCall = api.workSummary()
+        async let entriesCall = api.timeEntries()
         do {
             let fetchedStatus = try await statusCall
             guard session == expected, fetchVersion == version else {
@@ -105,6 +108,15 @@ final class ClockStore {
             adopt(summary: fetchedSummary)
         } catch {
             logger.error("Work summary failed, keeping the previous one: \(String(describing: error), privacy: .private)")
+        }
+        do {
+            let entries = try await entriesCall
+            guard session == expected else {
+                return
+            }
+            firstStartToday = DayStart.firstStart(entries: entries, today: DayStart.dayString(for: now()))
+        } catch {
+            logger.error("Time entries failed, keeping the previous day start: \(String(describing: error), privacy: .private)")
         }
     }
 
@@ -188,6 +200,7 @@ final class ClockStore {
         } else {
             status = nil
             summary = nil
+            firstStartToday = nil
             fetchedAt = nil
             profile = nil
             pendingBreakRegulation = nil

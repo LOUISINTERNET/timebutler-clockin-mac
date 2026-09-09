@@ -38,6 +38,11 @@ struct TimebutlerAPI: Sendable {
         try await send(.get, path: "user/profile", action: nil)
     }
 
+    /// The saved entries of the current month, newest first.
+    func timeEntries() async throws -> [TimeEntry] {
+        try await send(.get, path: "time-entries/my", action: nil)
+    }
+
     /// start, pause, resume and cancel all answer with the new clock status.
     func perform(_ action: ClockAction) async throws -> TimeClockStatus {
         precondition(action != .stop, "Use stop(_:) for the stop endpoint")
