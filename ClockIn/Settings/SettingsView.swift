@@ -1,28 +1,25 @@
 import SwiftUI
 
-/// FR-P1 and FR-P6: three tabs and the keychain note in the footer.
-struct SettingsView: View {
-    let store: ClockStore
-    let preferences: Preferences
-    let widget: WidgetPanelController
-    let loginItem: LoginItemManager
+/// Fixed-size frame for every settings tab (FR-P1) with the keychain note below the
+/// grouped form (FR-P6), in the style of Password Filler's settings.
+struct SettingsTabContainer<Content: View>: View {
+    static var size: CGSize {
+        CGSize(width: 540, height: 440)
+    }
+
+    @ViewBuilder let content: Content
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView {
-                AccountTab(store: store)
-                    .tabItem { Label("Konto", systemImage: "person.crop.circle") }
-                GeneralTab(preferences: preferences, widget: widget, loginItem: loginItem)
-                    .tabItem { Label("Allgemein", systemImage: "gearshape") }
-                AboutTab()
-                    .tabItem { Label("Info", systemImage: "info.circle") }
-            }
+            content
             Text("Zugangsdaten liegen im macOS-Schlüsselbund und gehen ausschließlich an app.timebutler.com.")
-                .font(.footnote)
+                .font(.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
-                .padding(.vertical, 8)
+                .padding(.bottom, 12)
         }
-        .frame(width: 520, height: 380)
+        .frame(width: Self.size.width, height: Self.size.height)
     }
 }

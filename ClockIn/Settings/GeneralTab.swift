@@ -11,27 +11,41 @@ struct GeneralTab: View {
             Section {
                 Toggle("Beim Anmelden starten", isOn: launchAtLogin)
                 if loginItem.requiresApproval {
-                    HStack {
-                        Text("macOS wartet auf deine Freigabe in den Systemeinstellungen.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        Button("Systemeinstellungen öffnen") {
-                            loginItem.openSystemSettings()
-                        }
+                    Button {
+                        loginItem.openSystemSettings()
+                    } label: {
+                        Label("Anmeldeobjekte in den Systemeinstellungen öffnen", systemImage: "power")
                     }
                 }
                 if let error = loginItem.errorMessage {
                     Text(error)
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(.red)
+                }
+            } header: {
+                Text("Start")
+            } footer: {
+                if loginItem.requiresApproval {
+                    Text("macOS wartet auf deine Freigabe in den Systemeinstellungen.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
             Section {
                 Toggle("Widget anzeigen", isOn: widgetVisible)
                 Toggle("Auf allen Schreibtischen anzeigen", isOn: $preferences.widgetOnAllSpaces)
-                Button("Widget-Position zurücksetzen") {
+                Button {
                     widget.resetPosition()
+                } label: {
+                    Label("Widget-Position zurücksetzen", systemImage: "arrow.counterclockwise")
                 }
+            } header: {
+                Text("Widget")
+            } footer: {
+                Text("Das Widget lässt sich an jeder freien Stelle verschieben; die Position bleibt über Neustarts erhalten.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .formStyle(.grouped)

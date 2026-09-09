@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// FR-P2: token or password sign-in, and the authenticator code step.
+/// FR-P2: the rows of the sign-in section, token or password, and the authenticator step.
 struct LoginFormView: View {
     static let tokenPageURL: URL = {
         guard let url = URL(string: "https://app.timebutler.com/do?ha=personaltoken&ac=6") else {
@@ -12,88 +12,75 @@ struct LoginFormView: View {
     @Bindable var model: LoginFormModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if model.awaitingCode {
-                codeStep
-            } else {
-                Picker("Anmeldung", selection: $model.method) {
-                    ForEach(LoginMethod.allCases) { method in
-                        Text(method.title).tag(method)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                switch model.method {
-                case .apiToken:
-                    tokenStep
-                case .password:
-                    passwordStep
+        if model.awaitingCode {
+            codeRows
+        } else {
+            Picker("Anmelden mit", selection: $model.method) {
+                ForEach(LoginMethod.allCases) { method in
+                    Text(method.title).tag(method)
                 }
             }
-            if let error = model.errorMessage {
-                Text(error)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
+            .pickerStyle(.segmented)
+            switch model.method {
+            case .apiToken:
+                tokenRows
+            case .password:
+                passwordRows
             }
         }
-        .disabled(model.isBusy)
-    }
-
-    private var tokenStep: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SecureField("tb_…", text: $model.apiToken)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit(submit)
-            Text("Persönliche Tokens legst du in Timebutler unter Einstellungen › Dein Konto › API-Token an.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Link("Token-Seite in Timebutler öffnen", destination: Self.tokenPageURL)
-                .font(.footnote)
-            submitRow(title: "Verbinden")
+        if let error = model.errorMessage {
+            Label(error, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.red)
         }
     }
 
-    private var passwordStep: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            TextField("E-Mail", text: $model.email)
-                .textContentType(.username)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit(submit)
-            SecureField("Passwort", text: $model.password)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit(submit)
-            submitRow(title: "Anmelden")
+    @ViewBuilder
+    private var tokenRows: some View {
+        SecureField("API-Token", text: $model.apiToken, prompt: Text("tb_…"))
+            .onSubmit(submit)
+        Link(destination: Self.tokenPageURL) {
+            Label("Token-Seite in Timebutler öffnen", systemImage: "safari")
         }
+        submitRow(title: "Verbinden", symbol: "link")
     }
 
-    private var codeStep: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Code aus der Authenticator-App")
-            TextField("123456", text: $model.totpCode)
-                .textContentType(.oneTimeCode)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 120)
-                .onSubmit(submit)
-            HStack {
-                Button("Bestätigen", action: submit)
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!model.canSubmit)
-                Button("Abbrechen") {
-                    model.cancelCode()
-                }
-                if model.isBusy {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-            }
-        }
+    @ViewBuilder
+    private var passwordRows: some View {
+        TextField("E-Mail", text: $model.email)
+            .textContentType(.username)
+            .onSubmit(submit)
+        SecureField("Passwort", text: $model.password)
+            .onSubmit(submit)
+        submitRow(title: "Anmelden", symbol: "person.badge.key")
     }
 
-    private func submitRow(title: String) -> some View {
+    @ViewBuilder
+    private var codeRows: some View {
+        TextField("Code aus der Authenticator-App", text: $model.totpCode, prompt: Text("123456"))
+            .textContentType(.oneTimeCode)
+            .onSubmit(submit)
         HStack {
-            Button(title, action: submit)
+            Button("Bestätigen", action: submit)
                 .keyboardShortcut(.defaultAction)
                 .disabled(!model.canSubmit)
+            Button("Abbrechen") {
+                model.cancelCode()
+            }
+            if model.isBusy {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+    }
+
+    private func submitRow(title: String, symbol: String) -> some View {
+        HStack {
+            Button(action: submit) {
+                Label(title, systemImage: symbol)
+            }
+            .keyboardShortcut(.defaultAction)
+            .disabled(!model.canSubmit)
             if model.isBusy {
                 ProgressView()
                     .controlSize(.small)
