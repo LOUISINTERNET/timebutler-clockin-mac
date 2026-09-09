@@ -1,5 +1,6 @@
 /// `TimeClockStatusDto` from the Timebutler API v2. Optionals mirror the fields the
-/// OpenAPI spec marks as nullable; everything else is required.
+/// OpenAPI spec marks as nullable, plus `isBusinessTripActive`, which the idle answer
+/// omits in production (EC-12); everything else is required.
 struct TimeClockStatus: Codable, Sendable, Equatable {
     let status: ClockState
     /// Unix milliseconds of the current clock-in, nil while idle.
@@ -10,7 +11,8 @@ struct TimeClockStatus: Codable, Sendable, Equatable {
     let breakElapsedSeconds: Int
     let accumulatedBreakSeconds: Int
     let waitSeconds: Int?
-    let isBusinessTripActive: Bool
+    /// Missing while idle; nil means no business trip.
+    let isBusinessTripActive: Bool?
     let startOnlyOnTerminal: Bool
     let pauseOnlyOnTerminal: Bool
     let stopOnlyOnTerminal: Bool

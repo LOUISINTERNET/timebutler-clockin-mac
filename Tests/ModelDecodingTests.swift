@@ -28,6 +28,18 @@ struct ModelDecodingTests {
         #expect(status.waitSeconds == 120)
     }
 
+    /// The idle answer Timebutler really sends: no timestamps, no waitSeconds and no
+    /// isBusinessTripActive (observed 2026-09-09 after stopping on the website, EC-12).
+    @Test func realIdleAnswerWithoutBusinessTripFlagDecodes() throws {
+        let data = try Fixture.data("status-idle-real")
+        #expect(data.count == 179)
+        let status = try JSONDecoder().decode(TimeClockStatus.self, from: data)
+        #expect(status.status == .idle)
+        #expect(status.startTimestamp == nil)
+        #expect(status.isBusinessTripActive == nil)
+        #expect(status.canStart)
+    }
+
     @Test func unknownStateFailsDecoding() {
         let data = Data(#"{"status":"sleeping","workTimeElapsedSeconds":0,"breakElapsedSeconds":0,"accumulatedBreakSeconds":0,"isBusinessTripActive":false,"startOnlyOnTerminal":false,"pauseOnlyOnTerminal":false,"stopOnlyOnTerminal":false}"#.utf8)
         #expect(throws: DecodingError.self) {
