@@ -1,0 +1,64 @@
+name: ClockIn
+options:
+  bundleIdPrefix: app.clockin
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: A5278RL7RX
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_HARDENED_RUNTIME: YES
+  configs:
+    Debug:
+      CODE_SIGN_STYLE: Automatic
+    Release:
+      CODE_SIGN_STYLE: Manual
+      CODE_SIGN_IDENTITY: "Developer ID Application"
+
+targets:
+  ClockIn:
+    type: application
+    platform: macOS
+    sources:
+      - path: ClockIn
+    settings:
+      base:
+        PRODUCT_NAME: ClockIn
+        PRODUCT_BUNDLE_IDENTIFIER: app.clockin
+        INFOPLIST_FILE: ClockIn/Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: ClockIn/Resources/ClockIn.entitlements
+
+  ClockInTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+      - path: ClockIn
+        excludes:
+          - "App/**"
+          - "Resources/**"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.clockin.Tests
+        GENERATE_INFOPLIST_FILE: YES
+        # xcodegen would otherwise pick up the app's Info.plist from the shared source tree.
+        INFOPLIST_FILE: ""
+
+schemes:
+  ClockIn:
+    build:
+      targets:
+        ClockIn: all
+        ClockInTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ClockInTests

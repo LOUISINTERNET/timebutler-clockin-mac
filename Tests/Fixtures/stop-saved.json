@@ -1,0 +1,9 @@
+{
+  "outcome": "saved",
+  "id": "98765",
+  "workedMinutes": 450,
+  "breakMinutes": 30,
+  "breakRegulationApplied": true,
+  "breakRegulationIgnored": false,
+  "breakRegulation": null
+}

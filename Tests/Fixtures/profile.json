@@ -1,0 +1,12 @@
+{
+  "id": "42",
+  "name": "Maria Müller",
+  "email": "maria.mueller@example.com",
+  "role": "MANAGER",
+  "department": "Engineering",
+  "branchOffice": "Berlin",
+  "country": null,
+  "avatar": "/images/avatar/42/abc123.jpg?v=5",
+  "isBusinessTripEnabled": true,
+  "isTimeTrackingEnabled": true
+}

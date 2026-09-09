@@ -1,0 +1,13 @@
+{
+  "status": "paused",
+  "startTimestamp": 1753700400000,
+  "pauseTimestamp": 1753714800000,
+  "workTimeElapsedSeconds": 14400,
+  "breakElapsedSeconds": 600,
+  "accumulatedBreakSeconds": 1800,
+  "waitSeconds": 0,
+  "isBusinessTripActive": false,
+  "startOnlyOnTerminal": false,
+  "pauseOnlyOnTerminal": false,
+  "stopOnlyOnTerminal": false
+}

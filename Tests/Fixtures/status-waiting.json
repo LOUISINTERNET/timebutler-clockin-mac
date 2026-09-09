@@ -1,0 +1,13 @@
+{
+  "status": "waiting",
+  "startTimestamp": 1753700400000,
+  "pauseTimestamp": null,
+  "workTimeElapsedSeconds": 0,
+  "breakElapsedSeconds": 0,
+  "accumulatedBreakSeconds": 0,
+  "waitSeconds": 120,
+  "isBusinessTripActive": false,
+  "startOnlyOnTerminal": false,
+  "pauseOnlyOnTerminal": false,
+  "stopOnlyOnTerminal": false
+}

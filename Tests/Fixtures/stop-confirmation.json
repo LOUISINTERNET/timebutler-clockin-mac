@@ -1,0 +1,12 @@
+{
+  "outcome": "confirmationRequired",
+  "breakRegulation": {
+    "hasNoRemedy": false,
+    "obligatory": false,
+    "correctionWorkMinutes": 30,
+    "correctionBreakMinutes": 30,
+    "resultingWorkMinutes": 420,
+    "resultingBreakMinutes": 60,
+    "detailText": "Die Pausenregelung verlangt 60 Minuten Pause bei mehr als 9 Stunden Arbeit."
+  }
+}
