@@ -11,13 +11,6 @@ extension WorkSummary {
         remainingMinutes - liveWorkMinutes(status: status, fetchedAt: fetchedAt, now: now)
     }
 
-    func breakMinutes(including status: TimeClockStatus?) -> Int {
-        guard let status, status.status.isActive else {
-            return breakMinutes
-        }
-        return breakMinutes + status.accumulatedBreakSeconds / 60
-    }
-
     /// Whole percent of the daily commitment, clamped to 0...100 for the progress bar.
     func percentDone(including status: TimeClockStatus?, fetchedAt: Date, now: Date) -> Int {
         guard commitmentMinutes > 0 else {

@@ -9,7 +9,6 @@ struct WorkSummaryLiveTests {
         let idle = try Fixture.decode(TimeClockStatus.self, from: "status-idle")
         #expect(summary.worked(including: idle, fetchedAt: fetchedAt, now: fetchedAt) == 192)
         #expect(summary.remaining(including: idle, fetchedAt: fetchedAt, now: fetchedAt) == 288)
-        #expect(summary.breakMinutes(including: idle) == 30)
         #expect(summary.percentDone(including: idle, fetchedAt: fetchedAt, now: fetchedAt) == 40)
         #expect(summary.worked(including: nil, fetchedAt: fetchedAt, now: fetchedAt) == 192)
     }
@@ -20,7 +19,6 @@ struct WorkSummaryLiveTests {
         // 14400 s + 120 s = 242 minutes on top of the saved 192.
         #expect(summary.worked(including: running, fetchedAt: fetchedAt, now: now) == 434)
         #expect(summary.remaining(including: running, fetchedAt: fetchedAt, now: now) == 46)
-        #expect(summary.breakMinutes(including: running) == 60)
         #expect(summary.percentDone(including: running, fetchedAt: fetchedAt, now: now) == 90)
     }
 

@@ -1,8 +1,11 @@
 import Foundation
 import Security
 
-/// Stores the credentials as one generic-password item in the data-protection keychain
-/// (design decision D6). Every status other than success and "not found" is an error.
+/// Stores the credentials as one generic-password item in the login keychain (design
+/// decision D6). The data-protection keychain is not an option: it needs a keychain access
+/// group from a provisioning profile, which this app deliberately has none of (NFR-1), and
+/// every write would fail with errSecMissingEntitlement. Every status other than success
+/// and "not found" is an error.
 struct KeychainCredentialStore: CredentialStore {
     private let service = AppIdentity.bundleIdentifier
     private let account = "credentials"
@@ -13,7 +16,6 @@ struct KeychainCredentialStore: CredentialStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            kSecUseDataProtectionKeychain as String: true,
         ]
     }
 
@@ -52,7 +54,6 @@ struct KeychainCredentialStore: CredentialStore {
         }
         var addQuery = baseQuery
         addQuery[kSecValueData as String] = data
-        addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
         guard addStatus == errSecSuccess else {
             logger.error("Keychain add failed with status \(addStatus, privacy: .public)")

@@ -93,14 +93,15 @@ extension ClockStore {
 
     private func reloadSummary() async {
         let expected = session
+        let version = currentFetchVersion
         do {
             let fetched = try await api.workSummary()
-            guard session == expected else {
+            guard session == expected, currentFetchVersion == version else {
                 return
             }
-            summary = fetched
+            adopt(summary: fetched)
         } catch {
-            logger.error("Work summary after action failed, keeping the previous one: \(String(describing: error), privacy: .public)")
+            logger.error("Work summary after action failed, keeping the previous one: \(String(describing: error), privacy: .private)")
         }
     }
 }

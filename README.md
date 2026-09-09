@@ -93,7 +93,7 @@ xcrun notarytool store-credentials clockin-notary --apple-id <apple-id> --team-i
 
 ## Security
 
-Credentials are stored in the macOS data-protection keychain (service `app.clockin`) and are sent to `app.timebutler.com` only. Tokens, passwords and authenticator codes never appear in logs. The app is not sandboxed; it needs no entitlements beyond the hardened runtime.
+Credentials are stored in the macOS login keychain (service `app.clockin`) and are sent to `app.timebutler.com` only. Tokens, passwords and authenticator codes never appear in logs. The app is not sandboxed; it needs no entitlements beyond the hardened runtime.
 
 ## Disclaimer
 

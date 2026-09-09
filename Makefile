@@ -61,12 +61,13 @@ run: ##4 Build and launch the Debug app
 test: ##4 Run the unit tests (offline, fixtures only)
 	$(MAKE) generate
 	$(XCODEBUILD) -configuration Debug test -skip-testing:ClockInTests/LiveAPITests
+	xcrun xcresulttool get test-results summary --path "$$(ls -td $(DERIVED_DATA)/Logs/Test/*.xcresult | head -1)" | python3 -c 'import json, sys; summary = json.load(sys.stdin); print(summary["passedTests"], "tests passed,", summary["failedTests"], "failed"); sys.exit(0 if summary["passedTests"] > 0 and summary["failedTests"] == 0 else 1)' || { echo "$(COLOR_RED)No tests ran or some failed$(COLOR_OFF)"; exit 1; }
 	echo "$(COLOR_GREEN)Tests passed$(COLOR_OFF)"
 
 test-live: ##4 Call the real Timebutler API with TIMEBUTLER_API_TOKEN from the environment
 	test -n "$(TIMEBUTLER_API_TOKEN)" || { echo "$(COLOR_RED)TIMEBUTLER_API_TOKEN is not set. Run: read -s TIMEBUTLER_API_TOKEN && export TIMEBUTLER_API_TOKEN && make test-live$(COLOR_OFF)"; exit 1; }
 	$(MAKE) generate
-	TEST_RUNNER_TIMEBUTLER_API_TOKEN="$(TIMEBUTLER_API_TOKEN)" $(XCODEBUILD) -configuration Debug test -only-testing:ClockInTests/LiveAPITests
+	TEST_RUNNER_TIMEBUTLER_API_TOKEN="$$TIMEBUTLER_API_TOKEN" $(XCODEBUILD) -configuration Debug test -only-testing:ClockInTests/LiveAPITests
 	xcrun xcresulttool get test-results summary --path "$$(ls -td $(DERIVED_DATA)/Logs/Test/*.xcresult | head -1)" | python3 -c 'import json, sys; summary = json.load(sys.stdin); sys.exit(0 if summary["passedTests"] == 1 and summary["skippedTests"] == 0 else 1)' || { echo "$(COLOR_RED)Live API test did not run: the token did not reach the test process$(COLOR_OFF)"; exit 1; }
 	echo "$(COLOR_GREEN)Live API test passed: profile, status and work summary decoded$(COLOR_OFF)"
 

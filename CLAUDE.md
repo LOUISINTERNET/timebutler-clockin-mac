@@ -61,3 +61,4 @@ Design decisions and requirements live in `specs/clock-in-mac-app/` (gitignored,
 - The status item may be collapsed into the menu bar overflow ("•••") by a menu bar manager; check the lifecycle log (`log show --predicate 'subsystem == "app.clockin"'`) when it seems missing.
 - Do not re-sign the app in build phases; signing is handled by `project.yml` (Automatic in Debug, Developer ID manual in Release) and `scripts/release.sh`.
 - `SMAppService.mainApp.status` is `.notFound` while the app runs from `build/`; launch at login only works from `/Applications`.
+- Never set `kSecUseDataProtectionKeychain`: without a provisioning profile (NFR-1) there is no keychain access group and every `SecItemAdd` fails with -34018. The app uses the login keychain; `security find-generic-password -s app.clockin` shows the item.

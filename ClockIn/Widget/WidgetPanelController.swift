@@ -29,10 +29,6 @@ final class WidgetPanelController {
         observeCollectionPreference()
     }
 
-    var isVisible: Bool {
-        panel.isVisible
-    }
-
     func show() {
         if !preferences.widgetVisible {
             preferences.widgetVisible = true

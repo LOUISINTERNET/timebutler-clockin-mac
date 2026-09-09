@@ -68,6 +68,10 @@ final class PollingScheduler {
     }
 
     func wake() async {
+        if store.isBusy {
+            logger.notice("Mac woke up while a clock action is running, the action's own refresh follows")
+            return
+        }
         logger.notice("Mac woke up, refreshing")
         await store.refresh()
     }

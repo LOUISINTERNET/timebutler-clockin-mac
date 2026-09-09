@@ -70,7 +70,7 @@ struct TimebutlerAPI: Sendable {
         }
         guard (200...299).contains(response.statusCode) else {
             let detail = String(decoding: response.body, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            logger.error("\(method.rawValue, privacy: .public) \(path, privacy: .public) failed with HTTP \(response.statusCode, privacy: .public): \(detail.prefix(200), privacy: .public)")
+            logger.error("\(method.rawValue, privacy: .public) \(path, privacy: .public) failed with HTTP \(response.statusCode, privacy: .public): \(detail.prefix(200), privacy: .private)")
             throw APIError.http(status: response.statusCode, action: action, detail: detail)
         }
         return response

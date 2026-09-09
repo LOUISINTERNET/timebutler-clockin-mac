@@ -52,15 +52,15 @@ extension ClockStore {
     /// FR-C10: after a conflict the buttons must match reality; `lastError` stays visible.
     private func reloadStatusAfterConflict() async {
         let expected = session
-        let version = currentStatusVersion
+        let version = currentFetchVersion
         do {
             let fetched = try await api.status()
-            guard session == expected, currentStatusVersion == version else {
+            guard session == expected, currentFetchVersion == version else {
                 return
             }
             adopt(status: fetched)
         } catch {
-            logger.error("Status reload after conflict failed: \(String(describing: error), privacy: .public)")
+            logger.error("Status reload after conflict failed: \(String(describing: error), privacy: .private)")
         }
     }
 }

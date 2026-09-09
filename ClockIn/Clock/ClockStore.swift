@@ -37,8 +37,9 @@ final class ClockStore {
     private var stateObservation: Task<Void, Never>?
     private var applyingState: SessionState?
     private var applyTask: Task<Void, Never>?
-    /// Bumped on every write of `status`; a fetch only writes if nothing newer arrived meanwhile.
-    private var statusVersion = 0
+    /// Bumped on every write of `status` or `summary`; a fetch only writes if nothing newer
+    /// arrived meanwhile.
+    private var fetchVersion = 0
 
     init(api: TimebutlerAPI, sessionManager: SessionManager, now: @escaping @Sendable () -> Date = Date.init) {
         self.api = api
@@ -77,16 +78,17 @@ final class ClockStore {
             logger.info("Refresh skipped, no active session")
             return
         }
-        let version = statusVersion
+        var version = fetchVersion
         async let statusCall = api.status()
         async let summaryCall = api.workSummary()
         do {
             let fetchedStatus = try await statusCall
-            guard session == expected, statusVersion == version else {
+            guard session == expected, fetchVersion == version else {
                 logger.notice("Dropping a status answer that was overtaken by a newer one")
                 return
             }
             adopt(status: fetchedStatus)
+            version = fetchVersion
             lastError = nil
         } catch {
             guard session == expected else {
@@ -97,12 +99,12 @@ final class ClockStore {
         }
         do {
             let fetchedSummary = try await summaryCall
-            guard session == expected else {
+            guard session == expected, fetchVersion == version else {
                 return
             }
-            summary = fetchedSummary
+            adopt(summary: fetchedSummary)
         } catch {
-            logger.error("Work summary failed, keeping the previous one: \(String(describing: error), privacy: .public)")
+            logger.error("Work summary failed, keeping the previous one: \(String(describing: error), privacy: .private)")
         }
     }
 
@@ -116,7 +118,7 @@ final class ClockStore {
             }
             profile = fetched
         } catch {
-            logger.error("Profile failed: \(String(describing: error), privacy: .public)")
+            logger.error("Profile failed: \(String(describing: error), privacy: .private)")
             guard session == expected else {
                 return
             }
@@ -124,15 +126,20 @@ final class ClockStore {
         }
     }
 
-    /// The single write path for a fetched status; every fetch checks `statusVersion`.
+    /// The write paths for fetched values; every fetch checks `fetchVersion` before calling them.
     func adopt(status fetched: TimeClockStatus) {
         status = fetched
         fetchedAt = now()
-        statusVersion += 1
+        fetchVersion += 1
     }
 
-    var currentStatusVersion: Int {
-        statusVersion
+    func adopt(summary fetched: WorkSummary) {
+        summary = fetched
+        fetchVersion += 1
+    }
+
+    var currentFetchVersion: Int {
+        fetchVersion
     }
 
     /// Reads the manager's current state. Called after every own sign-in or sign-out so the
