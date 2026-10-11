@@ -89,6 +89,9 @@
       </div>
 
       <p class="mt-6 text-sm text-neutral-600">
+        Updates installiert die App danach selbst.
+      </p>
+      <p class="mt-2 text-sm text-neutral-600">
         macOS 26 (Tahoe) oder neuer · Apple Silicon und Intel · signiert und von Apple notarisiert
       </p>
       <p class="mt-2 text-sm text-neutral-600">
@@ -114,21 +117,29 @@
   </footer>
 
   <script>
-    // Resolve the newest DMG from the GitHub release API so the button names version and
-    // size. Falls back to /releases/latest when the API is unreachable or rate-limited.
+    // Read the newest DMG from the Sparkle appcast, the same feed the app updates from, so the
+    // button names version and size. The release workflow adds final releases only, on top.
+    // Falls back to /releases/latest when the feed is unreachable, unreadable or still empty.
     (async () => {
-      const API = 'https://api.github.com/repos/LOUISINTERNET/timebutler-clockin-mac/releases/latest';
+      const APPCAST = 'https://raw.githubusercontent.com/LOUISINTERNET/timebutler-clockin-mac/main/updates/appcast.xml';
+      const SPARKLE_NAMESPACE = 'http://www.andymatuschak.org/xml-namespaces/sparkle';
       const labels = document.querySelectorAll('[id^="download-label"]');
       const buttons = document.querySelectorAll('[id^="download-btn"]');
       try {
-        const response = await fetch(API, { headers: { Accept: 'application/vnd.github+json' } });
-        if (!response.ok) throw new Error(`Release fetch ${response.status}`);
-        const release = await response.json();
-        const asset = (release.assets || []).find(item => item.name.endsWith('.dmg'));
-        if (!asset) throw new Error('No DMG asset in the latest release');
-        const sizeMb = (asset.size / (1024 * 1024)).toFixed(1);
-        labels.forEach(el => (el.textContent = `${release.tag_name} · ${sizeMb} MB`));
-        buttons.forEach(el => (el.href = asset.browser_download_url));
+        const response = await fetch(APPCAST, { cache: 'no-cache' });
+        if (!response.ok) throw new Error(`Appcast fetch ${response.status}`);
+        const xml = new DOMParser().parseFromString(await response.text(), 'application/xml');
+        if (xml.querySelector('parsererror')) throw new Error('Appcast is not valid XML');
+        const item = xml.querySelector('channel > item');
+        if (!item) throw new Error('Appcast has no <item> yet');
+        const enclosure = item.querySelector('enclosure');
+        const url = enclosure?.getAttribute('url');
+        const length = Number(enclosure?.getAttribute('length'));
+        const version = item.getElementsByTagNameNS(SPARKLE_NAMESPACE, 'shortVersionString')[0]?.textContent?.trim();
+        if (!url || !length || !version) throw new Error(`Appcast item lacks url, length or version: ${url}, ${length}, ${version}`);
+        const sizeMb = (length / (1024 * 1024)).toFixed(1);
+        labels.forEach(element => (element.textContent = `v${version} · ${sizeMb} MB`));
+        buttons.forEach(element => (element.href = url));
       } catch (error) {
         console.warn('Falling back to /releases/latest:', error);
       }
