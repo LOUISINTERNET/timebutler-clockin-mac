@@ -9,6 +9,7 @@ enum LogCategory: String {
     case statusBar = "statusbar"
     case widget
     case settings
+    case update
 }
 
 enum Log {

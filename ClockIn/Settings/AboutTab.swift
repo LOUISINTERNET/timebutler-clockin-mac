@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 /// FR-P5: name, version, disclaimer and links, laid out like Password Filler's about tab.
+/// FR-2, FR-3: the update check below the version line, disabled while Sparkle cannot check.
 struct AboutTab: View {
     static let apiDocumentationURL: URL = {
         guard let url = URL(string: "https://app.timebutler.com/api/v2/docs") else {
@@ -16,6 +17,9 @@ struct AboutTab: View {
         }
         return url
     }()
+
+    let updateState: UpdateState
+    let checkForUpdates: () -> Void
 
     var body: some View {
         Form {
@@ -37,6 +41,10 @@ struct AboutTab: View {
                     Spacer()
                 }
                 .padding(.vertical, 4)
+                Button(action: checkForUpdates) {
+                    Label("Nach Updates suchen…", systemImage: "arrow.triangle.2.circlepath")
+                }
+                .disabled(!updateState.canCheckForUpdates)
             }
             Section {
                 Link(destination: Self.timebutlerURL) {

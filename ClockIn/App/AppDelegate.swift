@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var widget: WidgetPanelController?
     private var statusBar: StatusBarController?
     private var settings: SettingsWindowController?
+    private var updater: Updater?
     private let loginItem = LoginItemManager()
 
     /// AppKit's default `NSApplicationDelegate.main()` only calls `NSApplicationMain`, which
@@ -29,10 +30,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let openSettings: () -> Void = { [weak self] in
             self?.settings?.show()
         }
+        let updateState = UpdateState()
+        let updater = Updater(updateState: updateState)
+        self.updater = updater
+        let checkForUpdates: () -> Void = { updater.checkForUpdates() }
         let widget = WidgetPanelController(store: dependencies.store, preferences: dependencies.preferences, openSettings: openSettings)
-        let menu = StatusBarMenu(store: dependencies.store, preferences: dependencies.preferences, toggleWidget: { widget.toggle() }, openSettings: openSettings)
+        let menu = StatusBarMenu(
+            store: dependencies.store,
+            preferences: dependencies.preferences,
+            updateState: updateState,
+            toggleWidget: { widget.toggle() },
+            openSettings: openSettings,
+            checkForUpdates: checkForUpdates
+        )
         statusBar = StatusBarController(store: dependencies.store, widget: widget, menu: menu)
-        settings = SettingsWindowController(store: dependencies.store, preferences: dependencies.preferences, widget: widget, loginItem: loginItem)
+        settings = SettingsWindowController(
+            store: dependencies.store,
+            preferences: dependencies.preferences,
+            widget: widget,
+            loginItem: loginItem,
+            updateState: updateState,
+            checkForUpdates: checkForUpdates
+        )
         self.widget = widget
         MainMenu.install(settingsTarget: self, settingsAction: #selector(showSettings))
         loginItem.reregisterIfLost(wanted: dependencies.preferences.launchAtLogin)

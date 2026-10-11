@@ -1,6 +1,6 @@
 # Clock In
 
-Native macOS 26 menu bar app for the Timebutler time clock. Swift 6 (strict concurrency), AppKit lifecycle, SwiftUI views, Liquid Glass, Swift Testing. No third-party dependencies.
+Native macOS 26 menu bar app for the Timebutler time clock. Swift 6 (strict concurrency), AppKit lifecycle, SwiftUI views, Liquid Glass, Swift Testing. Only third-party dependency: Sparkle 2.10.0 (SPM, exact version) for updates.
 
 ## Commands
 
@@ -20,7 +20,7 @@ Always build the scheme `ClockIn`, never the test target directly. `make build` 
 
 ```text
 ClockIn/
-  App/        AppDelegate (@main, custom main(), no nib), AppDependencies (composition root)
+  App/        AppDelegate (@main, custom main(), no nib), AppDependencies (composition root), Updater (the only file that imports Sparkle)
   API/        HTTPTransport (protocol + URLSessionTransport), TimebutlerAPI, APIError, TokenProvider, Models/
   Session/    SessionManager (actor, token refresh, keychain), OAuthClient, KeychainCredentialStore, SessionStateBroadcaster
   Clock/      ClockStore (@MainActor @Observable) + extensions (+Session, +Actions, +Errors), PollingScheduler, LiveClock, StopResult
@@ -28,6 +28,7 @@ ClockIn/
   StatusBar/  StatusBarController (NSStatusItem), StatusBarMenu, StatusBarPresentation (pure)
   Settings/   SettingsWindowController, SettingsView, AccountTab, LoginFormModel/View, GeneralTab, AboutTab, LoginItemManager
   Support/    Log (os.Logger, subsystem app.clockin), Preferences (UserDefaults), DurationFormatting, AppIdentity
+  Update/     UpdateState (Sparkle-free state that the status menu and the about tab read; Updater writes it)
 Tests/        Swift Testing, one file per type; Support/ has the fakes, Fixtures/ the JSON from the OpenAPI examples
 ```
 
@@ -60,6 +61,8 @@ Design decisions and requirements live in `specs/clock-in-mac-app/` (gitignored,
 - The development Mac has "Reduce transparency" on; Liquid Glass renders opaque there. Judge the glass look on a Mac without that setting.
 - `NSScreen.main` is the screen with the key window, not the built-in display. `screencapture -x a.png b.png` captures every display for visual checks.
 - The status item may be collapsed into the menu bar overflow ("•••") by a menu bar manager; check the lifecycle log (`log show --predicate 'subsystem == "app.clockin"'`) when it seems missing.
+- Sparkle declares `SPUStandardUserDriverDelegate` without an actor. `Updater` implements its methods `nonisolated` and enters `MainActor.assumeIsolated`, because Sparkle calls them on the main thread only.
+- The test bundle has no host app, so `NSApp` is nil there. A test that sends a menu action (`performActionForItem(at:)`) creates `NSApplication.shared` first.
 - Release signing names the G2 Developer ID certificate by SHA-1 (`scripts/release.sh`, `installer/ExportOptions.plist`, `project.yml`). The bare name "Developer ID Application" is ambiguous while the old certificate (expires 2027-02-01) is in the keychain, and `codesign` aborts.
 - Do not re-sign the app in build phases; signing is handled by `project.yml` (Automatic in Debug, Developer ID manual in Release) and `scripts/release.sh`.
 - `SMAppService.mainApp.status` is `.notFound` while the app runs from `build/`; launch at login only works from `/Applications`.

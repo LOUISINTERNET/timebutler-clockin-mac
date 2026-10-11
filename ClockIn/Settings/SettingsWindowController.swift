@@ -9,12 +9,19 @@ final class SettingsWindowController {
     private let window: NSWindow
     private let logger = Log.logger(.settings)
 
-    init(store: ClockStore, preferences: Preferences, widget: WidgetPanelController, loginItem: LoginItemManager) {
+    init(
+        store: ClockStore,
+        preferences: Preferences,
+        widget: WidgetPanelController,
+        loginItem: LoginItemManager,
+        updateState: UpdateState,
+        checkForUpdates: @escaping () -> Void
+    ) {
         let tabs = NSTabViewController()
         tabs.tabStyle = .toolbar
         tabs.addTabViewItem(Self.tab("Konto", symbol: "person.crop.circle") { AccountTab(store: store) })
         tabs.addTabViewItem(Self.tab("Allgemein", symbol: "gearshape") { GeneralTab(preferences: preferences, widget: widget, loginItem: loginItem) })
-        tabs.addTabViewItem(Self.tab("Info", symbol: "info.circle") { AboutTab() })
+        tabs.addTabViewItem(Self.tab("Info", symbol: "info.circle") { AboutTab(updateState: updateState, checkForUpdates: checkForUpdates) })
         window = NSWindow(contentViewController: tabs)
         window.styleMask = [.titled, .closable]
         window.toolbarStyle = .preference

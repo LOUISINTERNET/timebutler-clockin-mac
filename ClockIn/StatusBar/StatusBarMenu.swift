@@ -1,19 +1,31 @@
 import AppKit
 
-/// The right-click menu of the status item (FR-M4). Window-free, so its contents are tested.
+/// The right-click menu of the status item (FR-M4, update entry FR-2 to FR-4). Window-free,
+/// so its contents are tested.
 @MainActor
 final class StatusBarMenu: NSObject {
     private let store: ClockStore
     private let preferences: Preferences
+    private let updateState: UpdateState
     private let toggleWidget: () -> Void
     private let openSettings: () -> Void
+    private let checkForUpdates: () -> Void
     private let logger = Log.logger(.statusBar)
 
-    init(store: ClockStore, preferences: Preferences, toggleWidget: @escaping () -> Void, openSettings: @escaping () -> Void) {
+    init(
+        store: ClockStore,
+        preferences: Preferences,
+        updateState: UpdateState,
+        toggleWidget: @escaping () -> Void,
+        openSettings: @escaping () -> Void,
+        checkForUpdates: @escaping () -> Void
+    ) {
         self.store = store
         self.preferences = preferences
+        self.updateState = updateState
         self.toggleWidget = toggleWidget
         self.openSettings = openSettings
+        self.checkForUpdates = checkForUpdates
     }
 
     func build() -> NSMenu {
@@ -23,6 +35,9 @@ final class StatusBarMenu: NSObject {
         let refresh = item("Jetzt aktualisieren", #selector(refreshNow), key: "")
         refresh.isEnabled = store.session.isActive
         menu.addItem(refresh)
+        let update = item(updateState.menuTitle, #selector(checkForUpdatesItem), key: "")
+        update.isEnabled = updateState.canCheckForUpdates
+        menu.addItem(update)
         menu.addItem(.separator())
         menu.addItem(item("Einstellungen…", #selector(showSettings), key: ","))
         menu.addItem(.separator())
@@ -51,5 +66,9 @@ final class StatusBarMenu: NSObject {
 
     @objc private func showSettings() {
         openSettings()
+    }
+
+    @objc private func checkForUpdatesItem() {
+        checkForUpdates()
     }
 }

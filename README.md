@@ -9,6 +9,7 @@ A native macOS menu bar app for the [Timebutler](https://app.timebutler.com) tim
 - [Background](#background)
 - [Install](#install)
 - [Usage](#usage)
+- [Updates](#updates)
 - [Build from source](#build-from-source)
 - [Release](#release)
 - [Security](#security)
@@ -49,13 +50,19 @@ The widget shows the clock state (Gestoppt, Arbeit, Pause, Wartet), the running 
 ### Menu bar
 
 - Left click brings the widget to the front, and shows it if it was hidden.
-- Right click opens the menu: show or hide the widget, refresh now, settings (⌘,), quit (⌘Q).
+- Right click opens the menu: show or hide the widget, refresh now, check for updates, settings (⌘,), quit (⌘Q).
 
 ### Settings
 
 - **Konto**: who is signed in, and sign out.
 - **Allgemein**: launch at login, show the widget, keep it above every other window or let windows cover it, show it on all Spaces, reset its position.
-- **Info**: version and the link to the Timebutler API documentation.
+- **Info**: version, the update check, and the link to the Timebutler API documentation.
+
+## Updates
+
+Clock In updates itself with [Sparkle](https://sparkle-project.org). It checks in the background once a day; at launch only when the last check is more than a day old. An update found right after launch opens Sparkle's dialog. Later finds stay quiet: the menu entry changes to **Update auf <Version> installieren…** and waits for a click. **Nach Updates suchen…** in the right-click menu or under *Einstellungen › Info* checks at once.
+
+Sparkle installs an update only if its EdDSA signature matches the public key in the app and the app keeps the same Developer ID signature. Versions before 1.0.0 have no updater; install 1.0.0 once by hand from the releases page.
 
 ## Build from source
 

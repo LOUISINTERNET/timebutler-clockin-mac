@@ -32,5 +32,22 @@
 	<string>Copyright 2026 Andreas Isaak</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<!-- Sparkle 2. The EdDSA public key verifies that every update archive is signed by
+	     the matching private key: Sparkle account app.clockin in the maintainer's login
+	     keychain, and the SPARKLE_PRIVATE_KEY secret of the release environment in CI.
+	     Without it Sparkle installs nothing. Key rotation: ship one release with the new
+	     key here, signed with the same Developer ID certificate; Sparkle accepts the new
+	     key only while the Apple code signature stays the same, so never change the
+	     certificate and the key in one release. The release workflow refuses to build
+	     unless SUFeedURL equals the appcast on main; a wrong feed in a shipped version
+	     forces every user to reinstall by hand. -->
+	<key>SUPublicEDKey</key>
+	<string>bFZdcRVPIR1MpoRb1vIFMbz512moofS44VUBLeZn9aE=</string>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/LOUISINTERNET/timebutler-clockin-mac/main/updates/appcast.xml</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 </dict>
 </plist>
