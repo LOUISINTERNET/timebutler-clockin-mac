@@ -73,8 +73,8 @@ final class Preferences {
         widgetAlwaysOnTop = defaults.bool(forKey: Self.widgetAlwaysOnTopKey)
         widgetCollapsed = defaults.bool(forKey: Self.widgetCollapsedKey)
         launchAtLogin = defaults.bool(forKey: Self.launchAtLoginKey)
-        let storedPosition = defaults.dictionary(forKey: Self.widgetPositionKey)
-        widgetPosition = storedPosition.flatMap(WidgetPosition.init(propertyList:))
+        let storedPosition = defaults.object(forKey: Self.widgetPositionKey)
+        widgetPosition = (storedPosition as? [String: Any]).flatMap(WidgetPosition.init(propertyList:))
         if let storedPosition, widgetPosition == nil {
             logger.error("Saved widget position \(String(describing: storedPosition), privacy: .public) is malformed, the widget goes back to the top right corner")
         }

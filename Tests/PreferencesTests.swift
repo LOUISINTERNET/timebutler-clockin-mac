@@ -58,5 +58,7 @@ struct PreferencesTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         defaults.set(["horizontal": "middle", "vertical": "top", "x": 1.0, "y": 2.0], forKey: "widgetPosition")
         #expect(Preferences(defaults: defaults).widgetPosition == nil)
+        defaults.set("1810 1210 74 60", forKey: "widgetPosition")
+        #expect(Preferences(defaults: defaults).widgetPosition == nil)
     }
 }

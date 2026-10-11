@@ -118,12 +118,25 @@ final class WidgetPanelController {
         pin(WidgetPosition.nearest(to: panel.frame, in: screen.visibleFrame))
     }
 
-    /// EC-7: a frame that intersects no screen (display removed) goes back to the default.
+    /// EC-7: a widget on no screen (display removed) goes back to the default. One that sticks
+    /// out of the screen it is mostly on (resolution or arrangement changed while the app was
+    /// not running) moves back inside.
     private func ensureOnScreen() {
-        let onScreen = NSScreen.screens.contains { $0.visibleFrame.intersects(panel.frame) }
-        if !onScreen {
-            resetPosition()
+        let frame = panel.frame
+        let overlaps = NSScreen.screens.map { screen in
+            let overlap = screen.visibleFrame.intersection(frame)
+            return (screen: screen, area: overlap.isNull ? 0 : overlap.width * overlap.height)
         }
+        guard let best = overlaps.max(by: { $0.area < $1.area }), best.area > 0 else {
+            resetPosition()
+            return
+        }
+        let visible = best.screen.visibleFrame
+        guard !visible.contains(frame), let position else {
+            return
+        }
+        place(at: position.moved(into: visible, size: frame.size))
+        logger.notice("Widget stuck out of \(best.screen.localizedName, privacy: .public), moved inside to \(String(describing: self.panel.frame), privacy: .public)")
     }
 
     /// FR-W4: every Space and full-screen apps, or only the active Space. FR-W9: floating

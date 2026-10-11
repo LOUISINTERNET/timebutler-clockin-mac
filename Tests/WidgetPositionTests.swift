@@ -27,8 +27,23 @@ struct WidgetPositionTests {
         let position = WidgetPosition(anchor: WidgetAnchor(horizontal: .right, vertical: .bottom), corner: CGPoint(x: 980, y: 20))
         #expect(position.isKept(by: position.frame(for: CGSize(width: 247.33, height: 301.67))))
         let folded = position.frame(for: tile)
-        #expect(!position.isKept(by: folded.offsetBy(dx: -1, dy: 0)))
-        #expect(!position.isKept(by: folded.offsetBy(dx: 0, dy: 1)))
+        #expect(position.isKept(by: folded.offsetBy(dx: 1, dy: -1)))
+        #expect(!position.isKept(by: folded.offsetBy(dx: -2, dy: 0)))
+        #expect(!position.isKept(by: folded.offsetBy(dx: 0, dy: 2)))
+    }
+
+    @Test func aWidgetThatFitsStaysWhereItIs() {
+        let visibleFrame = CGRect(x: 0, y: 75, width: 2056, height: 1214)
+        let position = WidgetPosition(anchor: WidgetAnchor(horizontal: .right, vertical: .top), corner: CGPoint(x: 1884, y: 1270))
+        #expect(position.moved(into: visibleFrame, size: tile) == position)
+    }
+
+    @Test func aWidgetStickingOutMovesInsideAndPinsItsNewNearestCorner() {
+        let smallerScreen = CGRect(x: 0, y: 0, width: 1512, height: 945)
+        let pinnedOnTheWiderScreen = WidgetPosition(anchor: WidgetAnchor(horizontal: .right, vertical: .bottom), corner: CGPoint(x: 1700, y: 40))
+        #expect(pinnedOnTheWiderScreen.moved(into: smallerScreen, size: CGSize(width: 260, height: 116)) == WidgetPosition(anchor: WidgetAnchor(horizontal: .right, vertical: .bottom), corner: CGPoint(x: 1512, y: 40)))
+        let aboveTheTopLeft = WidgetPosition(anchor: WidgetAnchor(horizontal: .left, vertical: .top), corner: CGPoint(x: -50, y: 1000))
+        #expect(aboveTheTopLeft.moved(into: CGRect(x: 0, y: 0, width: 1000, height: 800), size: CGSize(width: 260, height: 116)) == WidgetPosition(anchor: WidgetAnchor(horizontal: .left, vertical: .top), corner: CGPoint(x: 0, y: 800)))
     }
 
     @Test func propertyListRoundTrips() {

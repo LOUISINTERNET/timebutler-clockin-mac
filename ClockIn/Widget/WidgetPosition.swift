@@ -7,8 +7,9 @@ struct WidgetPosition: Equatable {
     private static let verticalKey = "vertical"
     private static let xKey = "x"
     private static let yKey = "y"
-    /// Moves smaller than this are rounding in the window frame, not a drag.
-    private static let tolerance: CGFloat = 0.5
+    /// Moves up to this are rounding, not a drag: on 1x displays AppKit aligns origin and size
+    /// to whole pixels one by one, which can shift the pinned edge by a point.
+    private static let tolerance: CGFloat = 1.5
 
     let anchor: WidgetAnchor
     let corner: CGPoint
@@ -47,6 +48,15 @@ struct WidgetPosition: Equatable {
     func isKept(by frame: CGRect) -> Bool {
         let current = anchor.corner(of: frame)
         return abs(current.x - corner.x) < Self.tolerance && abs(current.y - corner.y) < Self.tolerance
+    }
+
+    /// EC-7: moved just far enough that a widget of `size` lies inside `visibleFrame`, with the
+    /// corner nearest to its edges pinned again. Unchanged when it already fits.
+    func moved(into visibleFrame: CGRect, size: CGSize) -> WidgetPosition {
+        let frame = frame(for: size)
+        let x = max(min(frame.minX, visibleFrame.maxX - size.width), visibleFrame.minX)
+        let y = min(max(frame.minY, visibleFrame.minY), visibleFrame.maxY - size.height)
+        return WidgetPosition.nearest(to: CGRect(origin: CGPoint(x: x, y: y), size: size), in: visibleFrame)
     }
 
     /// UserDefaults form: plain strings and numbers.
