@@ -8,8 +8,7 @@
 	<string>A5278RL7RX</string>
 	<key>signingStyle</key>
 	<string>manual</string>
-	<!-- SHA-1 of the G2 Developer ID Application certificate, see scripts/release.sh. -->
 	<key>signingCertificate</key>
-	<string>DA4198799C8B6998BE4690BDADCB108F1AE397DB</string>
+	<string>Developer ID Application</string>
 </dict>
 </plist>

@@ -10,7 +10,7 @@ make run         # build and open the Debug app
 make test        # unit tests, offline (skips LiveAPITests)
 make test-live   # LiveAPITests against the real API; needs TIMEBUTLER_API_TOKEN (use read -s)
 make install     # Debug build to /Applications
-make release     # scripts/release.sh: archive, Developer ID export, notarize, DMG (needs keychain profile clockin-notary)
+node --test scripts/*.test.js   # appcast and Sparkle signature script tests (node:test, no dependencies)
 make clean
 ```
 
@@ -63,7 +63,7 @@ Design decisions and requirements live in `specs/clock-in-mac-app/` (gitignored,
 - The status item may be collapsed into the menu bar overflow ("•••") by a menu bar manager; check the lifecycle log (`log show --predicate 'subsystem == "app.clockin"'`) when it seems missing.
 - Sparkle declares `SPUStandardUserDriverDelegate` without an actor. `Updater` implements its methods `nonisolated` and enters `MainActor.assumeIsolated`, because Sparkle calls them on the main thread only.
 - The test bundle has no host app, so `NSApp` is nil there. A test that sends a menu action (`performActionForItem(at:)`) creates `NSApplication.shared` first.
-- Release signing names the G2 Developer ID certificate by SHA-1 (`scripts/release.sh`, `installer/ExportOptions.plist`, `project.yml`). The bare name "Developer ID Application" is ambiguous while the old certificate (expires 2027-02-01) is in the keychain, and `codesign` aborts.
-- Do not re-sign the app in build phases; signing is handled by `project.yml` (Automatic in Debug, Developer ID manual in Release) and `scripts/release.sh`.
+- Releases only via tag and `.github/workflows/release.yml`; there is no local release path. CI commits the appcast to `main`, pull after each release. Its keychain holds only the G2 Developer ID certificate, so "Developer ID Application" is unambiguous there; on the development Mac the old certificate (expires 2027-02-01) makes the bare name ambiguous for `codesign`.
+- Do not re-sign the app in build phases; signing is handled by `project.yml` (Automatic in Debug, Developer ID manual in Release) and the release workflow.
 - `SMAppService.mainApp.status` is `.notFound` while the app runs from `build/`; launch at login only works from `/Applications`.
 - Never set `kSecUseDataProtectionKeychain`: without a provisioning profile (NFR-1) there is no keychain access group and every `SecItemAdd` fails with -34018. The app uses the login keychain; `security find-generic-password -s app.clockin` shows the item.

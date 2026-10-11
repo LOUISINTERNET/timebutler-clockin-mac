@@ -23,8 +23,9 @@ settings:
       CODE_SIGN_STYLE: Automatic
     Release:
       CODE_SIGN_STYLE: Manual
-      # G2 Developer ID Application certificate by SHA-1, see scripts/release.sh.
-      CODE_SIGN_IDENTITY: "DA4198799C8B6998BE4690BDADCB108F1AE397DB"
+      # Release builds only run in .github/workflows/release.yml, whose temporary keychain
+      # holds exactly one Developer ID certificate (G2), so the generic name is unambiguous.
+      CODE_SIGN_IDENTITY: "Developer ID Application"
 
 targets:
   ClockIn:

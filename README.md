@@ -66,10 +66,10 @@ Sparkle installs an update only if its EdDSA signature matches the public key in
 
 ## Build from source
 
-Requirements: Xcode 26, [xcodegen](https://github.com/yonaskolb/XcodeGen), and [create-dmg](https://github.com/create-dmg/create-dmg) for `make release`.
+Requirements: Xcode 26 and [xcodegen](https://github.com/yonaskolb/XcodeGen).
 
 ```bash
-brew install xcodegen create-dmg
+brew install xcodegen
 git clone git@github.com:LOUISINTERNET/timebutler-clockin-mac.git
 cd timebutler-clockin-mac
 make build
@@ -92,11 +92,35 @@ read -s TIMEBUTLER_API_TOKEN && export TIMEBUTLER_API_TOKEN && make test-live
 
 ## Release
 
-Releases are built locally by the maintainer, not in CI, so the signing certificate never leaves a personal Mac. `make release` archives a Release build, signs it with the Developer ID, notarizes app and disk image, staples both and writes `dist/ClockIn-<version>.dmg`. It signs with the Developer ID Application certificate from Apple's G2 CA, selected by its SHA-1 in `scripts/release.sh`, `installer/ExportOptions.plist` and `project.yml`; a new certificate means updating all three. It needs a notarization profile in the keychain, created once per Mac; the password is an app-specific password of the Apple ID from account.apple.com:
+Releases are built by GitHub Actions only (`.github/workflows/release.yml`), triggered by a version tag on `main`:
 
 ```bash
-xcrun notarytool store-credentials clockin-notary --apple-id <apple-id> --team-id A5278RL7RX --password <app-specific-password>
+git switch main && git pull --rebase && git tag v1.0.1 && git push origin main v1.0.1
 ```
+
+The workflow refuses tags that are not on `main`. It runs the script and unit tests, archives a Release build with the tag as version and the run number as build number, signs it with the Developer ID, notarizes app and disk image, and signs the disk image for Sparkle, checking that signature against `SUPublicEDKey` of the built app. It then publishes the GitHub release `ClockIn-<version>.dmg` with generated release notes, which you can edit on GitHub afterwards. Finally it puts the new version at the top of `updates/appcast.xml` and commits that to `main`, so installed copies offer the update within a day. Run `git pull --rebase` after every release, otherwise your next push collides with that commit.
+
+Tags with `-rc.N`, `-beta.N` or `-alpha.N` become GitHub prereleases. They leave the appcast alone and attach the finished `appcast-item.xml` instead; copy it into `updates/appcast.xml` by hand to test the update path. Only repository admins can create, move or delete `v*` tags (ruleset "Release tags").
+
+### One-time setup
+
+The secrets live in the environment `release`, which only `v*` tags may deploy to. Each `gh secret set` call prompts for the value:
+
+```bash
+R=LOUISINTERNET/timebutler-clockin-mac && gh secret set APPLE_ID --env release -R $R && gh secret set APPLE_APP_PASSWORD --env release -R $R && gh secret set APPLE_TEAM_ID --env release -R $R && gh secret set APPLE_CERT_PASSWORD --env release -R $R && gh secret set SPARKLE_PRIVATE_KEY --env release -R $R
+base64 -i <developer-id.p12> | gh secret set APPLE_CERT_APP_P12_BASE64 --env release -R LOUISINTERNET/timebutler-clockin-mac
+```
+
+| Secret | Content |
+|--------|---------|
+| `APPLE_ID` | Apple ID of the Developer Program membership |
+| `APPLE_APP_PASSWORD` | App-specific password of that Apple ID, from account.apple.com |
+| `APPLE_TEAM_ID` | `A5278RL7RX` |
+| `APPLE_CERT_APP_P12_BASE64` | The Developer ID Application certificate (G2) with its private key as `.p12`, base64-encoded; only this one certificate |
+| `APPLE_CERT_PASSWORD` | Export password of that `.p12` |
+| `SPARKLE_PRIVATE_KEY` | Private EdDSA key of the Sparkle account `app.clockin` |
+
+The Sparkle key pair comes from Sparkle's `generate_keys --account app.clockin`; without `--account` the tool returns the key of another app. The public half is `SUPublicEDKey` in `ClockIn/Resources/Info.plist`, the private half is exported once with `generate_keys --account app.clockin -x <file>`. The workflow stops before building when a secret is missing, `SUPublicEDKey` is empty or `SUFeedURL` is not the appcast on `main`.
 
 ## Security
 

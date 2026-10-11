@@ -1,0 +1,315 @@
+name: Release
+
+# Builds, tests, signs and notarizes Clock In for every pushed tag v*, publishes the disk image
+# as a GitHub release and announces it to Sparkle. Final tags put the new item at the top of
+# updates/appcast.xml on main. Prerelease tags (-rc.N, -beta.N, -alpha.N) leave the appcast
+# alone and attach appcast-item.xml to their release instead, so no user is offered a test
+# build. Secrets live in the environment "release", which only tags v* may deploy to.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Release ${{ github.ref_name }}
+    runs-on: macos-26
+    environment: release
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    env:
+      # Xcode 26 hangs at "Discovering version info for clang" without it (see Makefile).
+      CCC_OVERRIDE_OPTIONS: x-v
+      SPARKLE_VERSION: '2.10.0'
+      SPARKLE_SHA256: c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c
+      REPOSITORY_URL: https://github.com/LOUISINTERNET/timebutler-clockin-mac
+      APPCAST_URL: https://raw.githubusercontent.com/LOUISINTERNET/timebutler-clockin-mac/main/updates/appcast.xml
+
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Select Xcode 26 or newer
+        run: |
+          shopt -s nullglob
+          candidates=(/Applications/Xcode_2[6-9]*.app)
+          xcode="$(printf '%s\n' "${candidates[@]}" | awk '!/[Bb]eta|Release_Candidate/' | sort -V | tail -n 1)"
+          if [ -z "$xcode" ]; then
+            echo "::error::No release Xcode 26 or newer in /Applications. Installed:"
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select -s "$xcode"
+          echo "Selected $xcode"
+          xcodebuild -version
+
+      - name: Preflight - secrets and Sparkle settings
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_CERT_APP_P12_BASE64: ${{ secrets.APPLE_CERT_APP_P12_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          missing=()
+          for name in APPLE_ID APPLE_APP_PASSWORD APPLE_TEAM_ID APPLE_CERT_APP_P12_BASE64 APPLE_CERT_PASSWORD SPARKLE_PRIVATE_KEY; do
+            if [ -z "${!name}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing secrets in the environment 'release': ${missing[*]}. Set them with 'gh secret set <name> --env release', see README.md, section Release."
+            exit 1
+          fi
+          plist=ClockIn/Resources/Info.plist
+          if ! public_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$plist")" || [ -z "$public_key" ]; then
+            echo "::error::SUPublicEDKey in $plist is missing or empty. Sparkle installs no update without it."
+            exit 1
+          fi
+          if ! feed="$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$plist")" || [ "$feed" != "$APPCAST_URL" ]; then
+            echo "::error::SUFeedURL in $plist is '${feed:-missing}', expected '$APPCAST_URL'. A wrong feed strands every installed copy."
+            exit 1
+          fi
+          echo "Secrets present, SUPublicEDKey set, SUFeedURL $feed"
+
+      - name: Read version from the tag
+        id: version
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|beta|alpha)\.[0-9]+)?$ ]]; then
+            echo "::error::Tag '$GITHUB_REF_NAME' is not v<major>.<minor>.<patch> with an optional -rc.N, -beta.N or -alpha.N."
+            exit 1
+          fi
+          git fetch --quiet origin main
+          # HEAD is the tagged commit, also for annotated tags.
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::Tag '$GITHUB_REF_NAME' points to $(git rev-parse HEAD), which is not on main. Tag a commit of main."
+            exit 1
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          if [[ "$version" =~ -(rc|beta|alpha) ]]; then
+            prerelease=true
+          else
+            prerelease=false
+          fi
+          {
+            echo "version=$version"
+            echo "build=$GITHUB_RUN_NUMBER"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version $version, build $GITHUB_RUN_NUMBER, prerelease $prerelease"
+
+      - name: Install xcodegen and create-dmg
+        run: brew install xcodegen create-dmg
+
+      - name: Run the appcast script tests
+        run: node --test scripts/*.test.js
+
+      - name: Run the unit tests
+        # Debug signs automatically, which needs a development certificate the runner lacks.
+        run: make test XCODEBUILD_FLAGS="CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=-"
+
+      - name: Set up the signing keychain
+        env:
+          APPLE_CERT_APP_P12_BASE64: ${{ secrets.APPLE_CERT_APP_P12_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/build.keychain-db"
+          keychain_password="$(openssl rand -hex 32)"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          echo "$APPLE_CERT_APP_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/developer-id.p12"
+          security import "$RUNNER_TEMP/developer-id.p12" -P "$APPLE_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$keychain" -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/developer-id.p12"
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          security default-keychain -s "$keychain"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain"
+          echo "KEYCHAIN_PATH=$keychain" >> "$GITHUB_ENV"
+
+      - name: Check the Developer ID identity
+        run: |
+          identities="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH")"
+          echo "$identities"
+          count="$(grep -c '"Developer ID Application' <<<"$identities" || true)"
+          if [ "$count" != "1" ]; then
+            echo "::error::Expected exactly one Developer ID Application identity in the signing keychain, found $count. APPLE_CERT_APP_P12_BASE64 must hold only the G2 certificate."
+            exit 1
+          fi
+
+      - name: Archive and export the app
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+        run: |
+          xcodegen generate
+          xcodebuild \
+            -project ClockIn.xcodeproj \
+            -scheme ClockIn \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath dist/ClockIn.xcarchive \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD" \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            archive
+          xcodebuild \
+            -exportArchive \
+            -archivePath dist/ClockIn.xcarchive \
+            -exportOptionsPlist installer/ExportOptions.plist \
+            -exportPath dist/export
+          plist=dist/export/ClockIn.app/Contents/Info.plist
+          echo "CFBundleShortVersionString $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist"), CFBundleVersion $(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")"
+          codesign --verify --deep --strict --verbose=2 dist/export/ClockIn.app
+
+      - name: Notarize and staple the app
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # The app carries its own ticket, so it stays valid once copied out of the disk image.
+          ditto -c -k --sequesterRsrc --keepParent dist/export/ClockIn.app "$RUNNER_TEMP/ClockIn.zip"
+          scripts/notarize.sh "$RUNNER_TEMP/ClockIn.zip" dist/export/ClockIn.app
+          rm "$RUNNER_TEMP/ClockIn.zip"
+
+      - name: Build, sign and notarize the disk image
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          dmg="dist/ClockIn-$VERSION.dmg"
+          staging="$RUNNER_TEMP/dmg-root"
+          mkdir -p "$staging"
+          cp -R dist/export/ClockIn.app "$staging/"
+          # Drag-to-Applications window: 660x420, app left, Applications link right, arrow
+          # from installer/dmg-background.png.
+          create-dmg \
+            --volname "Clock In" \
+            --background installer/dmg-background.png \
+            --window-pos 200 120 \
+            --window-size 660 420 \
+            --icon-size 140 \
+            --icon "ClockIn.app" 180 150 \
+            --app-drop-link 480 150 \
+            --hide-extension "ClockIn.app" \
+            --no-internet-enable \
+            "$dmg" \
+            "$staging"
+          codesign --force --timestamp --sign "Developer ID Application" "$dmg"
+          codesign --verify --verbose=2 "$dmg"
+          scripts/notarize.sh "$dmg" "$dmg"
+          spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
+          echo "DMG_PATH=$dmg" >> "$GITHUB_ENV"
+
+      - name: Sign the disk image for Sparkle
+        id: sparkle
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          curl -fsSL "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz" -o "$RUNNER_TEMP/sparkle.tar.xz"
+          echo "$SPARKLE_SHA256  $RUNNER_TEMP/sparkle.tar.xz" | shasum -a 256 -c -
+          mkdir -p "$RUNNER_TEMP/sparkle"
+          tar -xJf "$RUNNER_TEMP/sparkle.tar.xz" -C "$RUNNER_TEMP/sparkle"
+          # The key goes through stdin and never touches the disk.
+          sign_exit=0
+          signed="$(printf '%s' "$SPARKLE_PRIVATE_KEY" | "$RUNNER_TEMP/sparkle/bin/sign_update" --ed-key-file - "$DMG_PATH")" || sign_exit=$?
+          if [ "$sign_exit" -ne 0 ]; then
+            # Not printed: on a malformed key sign_update echoes the key itself.
+            echo "::error::sign_update failed with exit $sign_exit. Check that SPARKLE_PRIVATE_KEY holds the key exported with 'generate_keys --account app.clockin -x'."
+            exit 1
+          fi
+          echo "$signed"
+          signature="$(sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p' <<<"$signed")"
+          length="$(sed -n 's/.*length="\([^"]*\)".*/\1/p' <<<"$signed")"
+          if [ -z "$signature" ] || [ -z "$length" ]; then
+            echo "::error::sign_update printed no edSignature and length for $DMG_PATH"
+            exit 1
+          fi
+          public_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' dist/export/ClockIn.app/Contents/Info.plist)"
+          node scripts/verify-sparkle-signature.js --file "$DMG_PATH" --public-key "$public_key" --signature "$signature"
+          minimum_system_version="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' dist/export/ClockIn.app/Contents/Info.plist)"
+          {
+            echo "signature=$signature"
+            echo "length=$length"
+            echo "minimum_system_version=$minimum_system_version"
+          } >> "$GITHUB_OUTPUT"
+          release_files="$DMG_PATH"
+          if [ "$PRERELEASE" = "true" ]; then
+            node scripts/update-appcast.js \
+              --appcast updates/appcast.xml \
+              --version "$VERSION" \
+              --build "$BUILD" \
+              --url "$REPOSITORY_URL/releases/download/v$VERSION/ClockIn-$VERSION.dmg" \
+              --length "$length" \
+              --signature "$signature" \
+              --minimum-system-version "$minimum_system_version" \
+              --release-url "$REPOSITORY_URL/releases/tag/v$VERSION" \
+              --item-only > dist/appcast-item.xml
+            cat dist/appcast-item.xml
+            release_files="$release_files"$'\n'"dist/appcast-item.xml"
+          fi
+          {
+            echo "release_files<<EOF"
+            echo "$release_files"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Remove the signing keychain
+        if: always()
+        run: |
+          if [ -n "${KEYCHAIN_PATH:-}" ]; then
+            security delete-keychain "$KEYCHAIN_PATH"
+          fi
+
+      - name: Publish the GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: Clock In ${{ steps.version.outputs.version }}
+          prerelease: ${{ steps.version.outputs.prerelease == 'true' }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: ${{ steps.sparkle.outputs.release_files }}
+
+      - name: Add the release to the appcast on main
+        if: steps.version.outputs.prerelease == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD: ${{ steps.version.outputs.build }}
+          SIGNATURE: ${{ steps.sparkle.outputs.signature }}
+          LENGTH: ${{ steps.sparkle.outputs.length }}
+          MINIMUM_SYSTEM_VERSION: ${{ steps.sparkle.outputs.minimum_system_version }}
+        run: |
+          # A fresh main, not the tag checkout: main may have moved since the tag.
+          git fetch origin main
+          git switch -C main origin/main
+          node scripts/update-appcast.js \
+            --appcast updates/appcast.xml \
+            --version "$VERSION" \
+            --build "$BUILD" \
+            --url "$REPOSITORY_URL/releases/download/v$VERSION/ClockIn-$VERSION.dmg" \
+            --length "$LENGTH" \
+            --signature "$SIGNATURE" \
+            --minimum-system-version "$MINIMUM_SYSTEM_VERSION" \
+            --release-url "$REPOSITORY_URL/releases/tag/v$VERSION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add updates/appcast.xml
+          git commit -m "Update the appcast for v$VERSION"
+          git push origin main

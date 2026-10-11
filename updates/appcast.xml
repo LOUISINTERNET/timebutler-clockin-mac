@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Clock In</title>
+    <link>https://louisinternet.github.io/timebutler-clockin-mac/</link>
+    <description>Update feed for Clock In, the macOS menu bar app for the Timebutler time clock. Written by .github/workflows/release.yml.</description>
+    <language>de</language>
+  </channel>
+</rss>

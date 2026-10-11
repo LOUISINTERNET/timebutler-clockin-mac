@@ -18,7 +18,10 @@ SCHEME := ClockIn
 DERIVED_DATA := build
 APP := $(DERIVED_DATA)/Build/Products/Debug/ClockIn.app
 ARCH := $(shell uname -m)
-XCODEBUILD := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED_DATA) -destination 'platform=macOS,arch=$(ARCH)' -quiet
+# Extra build settings. The release workflow signs ad hoc, because Debug signs automatically and
+# the runner has no development certificate: make test XCODEBUILD_FLAGS="CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=-"
+XCODEBUILD_FLAGS ?=
+XCODEBUILD := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED_DATA) -destination 'platform=macOS,arch=$(ARCH)' -quiet $(XCODEBUILD_FLAGS)
 
 define ASCII_ART
 	@echo "   ________           __      ____    "
@@ -42,7 +45,6 @@ help: ##1 Show this help
 	@$(ASCII_ART)
 	$(call display_help,"Documentation:",1)
 	$(call display_help,"Development:",4)
-	$(call display_help,"Release:",5)
 
 # Development ------------------------------------------------------------
 
@@ -80,10 +82,5 @@ install: ##4 Copy the Debug app to /Applications
 clean: ##4 Remove build output and the generated Xcode project
 	rm -rf "$(DERIVED_DATA)" dist "$(PROJECT)"
 
-# Release ----------------------------------------------------------------
-
-release: ##5 Archive, notarize and package a DMG into dist/
-	scripts/release.sh
-
-.PHONY: help generate build run test test-live install clean release
+.PHONY: help generate build run test test-live install clean
 .SILENT:
