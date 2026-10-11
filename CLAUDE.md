@@ -55,6 +55,7 @@ Design decisions and requirements live in `specs/clock-in-mac-app/` (gitignored,
 
 - Xcode 26 hangs at "Discovering version info for clang" unless `CCC_OVERRIDE_OPTIONS=x-v` is set; the Makefile exports it, direct `xcodebuild` calls need it inline.
 - `NSHostingView.sizingOptions` needs `.intrinsicContentSize` in addition to `.preferredContentSize`, otherwise `fittingSize` is zero and the panel starts 0×0 off screen.
+- The widget position is stored as its pinned corner (`Preferences.widgetPosition`), not with `setFrameAutosaveName`: AppKit restores the saved origin with the current content size, and a frame that no longer fits its screen lands on `NSScreen.main`, usually the other display. `NSWindow.setAnchorAttribute` keeps that corner when the content resizes the window.
 - The widget panel never becomes key. `Color.accentColor` resolves to grey in inactive windows and the built-in glass button styles render inactive, so `WidgetButton` draws its own capsule with explicit tints.
 - The development Mac has "Reduce transparency" on; Liquid Glass renders opaque there. Judge the glass look on a Mac without that setting.
 - `NSScreen.main` is the screen with the key window, not the built-in display. `screencapture -x a.png b.png` captures every display for visual checks.

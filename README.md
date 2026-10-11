@@ -44,7 +44,7 @@ Personal tokens are the recommended way: they do not expire every few days and c
 
 ### Widget
 
-The widget shows the clock state (Gestoppt, Arbeit, Pause, Wartet), the running time, today's target, actual and remaining time, and the buttons the current state allows. The chevron in its header folds it to a single line with just the running time, like a collapsed sticky note. Drag it anywhere; its position and folded state survive a restart. When you stop a session that violates a break regulation, the widget shows Timebutler's proposal and lets you apply the correction, ignore it, or cancel the session.
+The widget shows the clock state (Gestoppt, Arbeit, Pause, Wartet), the running time, today's target, actual and remaining time, and the buttons the current state allows. The chevron in its header folds it to a single line with just the running time, like a collapsed sticky note. Drag it anywhere; its position and folded state survive a restart. It always opens toward the middle of the screen: placed in the right half it grows to the left, placed in the lower half it grows upward. When you stop a session that violates a break regulation, the widget shows Timebutler's proposal and lets you apply the correction, ignore it, or cancel the session.
 
 ### Menu bar
 

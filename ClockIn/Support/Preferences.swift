@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// The two flags the app keeps in UserDefaults (design decision D16). Credentials live in
-/// the keychain, the widget position in the window's frame autosave.
+/// The small settings the app keeps in UserDefaults (design decision D16). Credentials live
+/// in the keychain.
 @MainActor
 @Observable
 final class Preferences {
@@ -11,6 +11,7 @@ final class Preferences {
     private static let launchAtLoginKey = "launchAtLogin"
     private static let widgetCollapsedKey = "widgetCollapsed"
     private static let widgetAlwaysOnTopKey = "widgetAlwaysOnTop"
+    private static let widgetPositionKey = "widgetPosition"
 
     private let defaults: UserDefaults
     private let logger = Log.logger(.settings)
@@ -47,6 +48,15 @@ final class Preferences {
         }
     }
 
+    /// FR-W2, FR-W10: the widget's pinned corner; nil until the widget was placed once.
+    var widgetPosition: WidgetPosition? {
+        didSet {
+            defaults.set(widgetPosition?.propertyList, forKey: Self.widgetPositionKey)
+            // Debug, not notice: a drag writes it on every step.
+            logger.debug("widgetPosition = \(String(describing: self.widgetPosition), privacy: .public)")
+        }
+    }
+
     /// EC-8: what the user asked for, so a lost login item can be registered again at launch.
     var launchAtLogin: Bool {
         didSet {
@@ -63,5 +73,10 @@ final class Preferences {
         widgetAlwaysOnTop = defaults.bool(forKey: Self.widgetAlwaysOnTopKey)
         widgetCollapsed = defaults.bool(forKey: Self.widgetCollapsedKey)
         launchAtLogin = defaults.bool(forKey: Self.launchAtLoginKey)
+        let storedPosition = defaults.dictionary(forKey: Self.widgetPositionKey)
+        widgetPosition = storedPosition.flatMap(WidgetPosition.init(propertyList:))
+        if let storedPosition, widgetPosition == nil {
+            logger.error("Saved widget position \(String(describing: storedPosition), privacy: .public) is malformed, the widget goes back to the top right corner")
+        }
     }
 }
