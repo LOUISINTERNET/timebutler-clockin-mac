@@ -17,6 +17,7 @@ PROJECT := ClockIn.xcodeproj
 SCHEME := ClockIn
 DERIVED_DATA := build
 APP := $(DERIVED_DATA)/Build/Products/Debug/ClockIn.app
+TEST_RESULTS := $(DERIVED_DATA)/TestResults.xcresult
 ARCH := $(shell uname -m)
 # Extra build settings. The release workflow signs ad hoc, because Debug signs automatically and
 # the runner has no development certificate: make test XCODEBUILD_FLAGS="CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=-"
@@ -60,10 +61,13 @@ run: ##4 Build and launch the Debug app
 	$(MAKE) build
 	open "$(APP)"
 
+# The verdict comes from the result bundle, which also names each failed expectation; xcodebuild
+# itself prints only the test name. A fresh bundle path keeps an older run from being read.
 test: ##4 Run the unit tests (offline, fixtures only)
 	$(MAKE) generate
-	$(XCODEBUILD) -configuration Debug test -skip-testing:ClockInTests/LiveAPITests
-	xcrun xcresulttool get test-results summary --path "$$(ls -td $(DERIVED_DATA)/Logs/Test/*.xcresult | head -1)" | python3 -c 'import json, sys; summary = json.load(sys.stdin); print(summary["passedTests"], "tests passed,", summary["failedTests"], "failed"); sys.exit(0 if summary["passedTests"] > 0 and summary["failedTests"] == 0 else 1)' || { echo "$(COLOR_RED)No tests ran or some failed$(COLOR_OFF)"; exit 1; }
+	rm -rf "$(TEST_RESULTS)"
+	-$(XCODEBUILD) -configuration Debug test -skip-testing:ClockInTests/LiveAPITests -resultBundlePath "$(TEST_RESULTS)"
+	xcrun xcresulttool get test-results summary --path "$(TEST_RESULTS)" | python3 -c 'import json, sys; summary = json.load(sys.stdin); [print("FAILED", failure["testName"] + ":", failure["failureText"]) for failure in summary["testFailures"]]; print(summary["passedTests"], "tests passed,", summary["failedTests"], "failed"); sys.exit(0 if summary["passedTests"] > 0 and summary["failedTests"] == 0 else 1)' || { echo "$(COLOR_RED)No tests ran or some failed$(COLOR_OFF)"; exit 1; }
 	echo "$(COLOR_GREEN)Tests passed$(COLOR_OFF)"
 
 test-live: ##4 Call the real Timebutler API with TIMEBUTLER_API_TOKEN from the environment

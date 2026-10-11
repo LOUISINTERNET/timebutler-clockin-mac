@@ -25,20 +25,36 @@ struct PollingSchedulerTests {
         #expect(await harness.transport.requestCount(pathSuffix: "time-clock/status") == afterStart + 1)
     }
 
+    /// Waits for a condition instead of a fixed window: on a shared CI runner every main-actor
+    /// test competes for the main actor, and a 200 ms window saw fewer than three polls.
+    private func waitUntil(timeout: Duration = .seconds(10), _ condition: () async -> Bool) async throws {
+        let deadline = ContinuousClock.now + timeout
+        while await !condition() {
+            guard ContinuousClock.now < deadline else {
+                Issue.record("Condition not met within \(timeout)")
+                return
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
     @Test func loopPollsRepeatedlyUntilStopped() async throws {
         let harness = try await startedStore()
         defer { harness.store.stopObserving() }
         let scheduler = PollingScheduler(store: harness.store, interval: .milliseconds(20))
-        let afterStart = await harness.transport.requestCount(pathSuffix: "time-clock/status")
+        let statusRequests = { await harness.transport.requestCount(pathSuffix: "time-clock/status") }
+        let afterStart = await statusRequests()
         scheduler.start()
-        try await Task.sleep(for: .milliseconds(200))
+        try await waitUntil { await statusRequests() >= afterStart + 3 }
         scheduler.stop()
-        // A tick that was already past its sleep may still finish; give it time before counting.
-        try await Task.sleep(for: .milliseconds(100))
-        let afterStop = await harness.transport.requestCount(pathSuffix: "time-clock/status")
-        #expect(afterStop - afterStart >= 3)
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(await harness.transport.requestCount(pathSuffix: "time-clock/status") == afterStop)
+        let atStop = await statusRequests()
+        // A tick that was already past its sleep may still finish its refresh, nothing after it.
+        // A loop that kept running would add about 25 polls in this time.
+        try await Task.sleep(for: .milliseconds(500))
+        let afterStop = await statusRequests()
+        #expect(afterStop - atStop <= 1)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(await statusRequests() == afterStop)
     }
 
     @Test func tickWaitsWhileAClockActionRuns() async throws {
