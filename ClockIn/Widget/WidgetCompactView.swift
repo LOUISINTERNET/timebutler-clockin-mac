@@ -69,7 +69,7 @@ struct WidgetCompactView: View {
 
     /// "seit 17:27 (08:37)" while working, "Pause seit 17:35 (08:37)" while paused,
     /// "heute erfasst" while idle.
-    static func since(status: TimeClockStatus, firstStart: String?) -> String {
+    nonisolated static func since(status: TimeClockStatus, firstStart: String?) -> String {
         switch status.status {
         case .paused:
             if let pause = status.pauseTimestamp {

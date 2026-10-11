@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Security
 
 /// Stores the credentials as one generic-password item in the login keychain (design

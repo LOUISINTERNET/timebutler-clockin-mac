@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 enum LoginResult: Sendable, Equatable {
     case signedIn(OAuthSession)

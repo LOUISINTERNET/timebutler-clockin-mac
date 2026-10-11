@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Client for the Timebutler REST API v2 endpoints the app uses.
 struct TimebutlerAPI: Sendable {
