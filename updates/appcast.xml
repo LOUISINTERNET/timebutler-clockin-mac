@@ -5,5 +5,14 @@
     <link>https://louisinternet.github.io/timebutler-clockin-mac/</link>
     <description>Update feed for Clock In, the macOS menu bar app for the Timebutler time clock. Written by .github/workflows/release.yml.</description>
     <language>de</language>
+    <item>
+      <title>Version 1.0.0-rc.3</title>
+      <link>https://github.com/LOUISINTERNET/timebutler-clockin-mac/releases/tag/v1.0.0-rc.3</link>
+      <sparkle:version>3</sparkle:version>
+      <sparkle:shortVersionString>1.0.0-rc.3</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+      <pubDate>Sun, 11 Oct 2026 12:15:43 GMT</pubDate>
+      <enclosure url="https://github.com/LOUISINTERNET/timebutler-clockin-mac/releases/download/v1.0.0-rc.3/ClockIn-1.0.0-rc.3.dmg" sparkle:edSignature="3yuexGJmXVZvR00Y5Lqh59pSct85ZR7Z8kdoaFh0ns8agy/LmMXFKpFbO6F3yEzhxmBp1wjoRen1zbm3ysJQBw==" length="1685314" type="application/octet-stream" />
+    </item>
   </channel>
 </rss>
