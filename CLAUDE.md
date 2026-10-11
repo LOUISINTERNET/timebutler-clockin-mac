@@ -60,6 +60,7 @@ Design decisions and requirements live in `specs/clock-in-mac-app/` (gitignored,
 - The development Mac has "Reduce transparency" on; Liquid Glass renders opaque there. Judge the glass look on a Mac without that setting.
 - `NSScreen.main` is the screen with the key window, not the built-in display. `screencapture -x a.png b.png` captures every display for visual checks.
 - The status item may be collapsed into the menu bar overflow ("•••") by a menu bar manager; check the lifecycle log (`log show --predicate 'subsystem == "app.clockin"'`) when it seems missing.
+- Release signing names the G2 Developer ID certificate by SHA-1 (`scripts/release.sh`, `installer/ExportOptions.plist`, `project.yml`). The bare name "Developer ID Application" is ambiguous while the old certificate (expires 2027-02-01) is in the keychain, and `codesign` aborts.
 - Do not re-sign the app in build phases; signing is handled by `project.yml` (Automatic in Debug, Developer ID manual in Release) and `scripts/release.sh`.
 - `SMAppService.mainApp.status` is `.notFound` while the app runs from `build/`; launch at login only works from `/Applications`.
 - Never set `kSecUseDataProtectionKeychain`: without a provisioning profile (NFR-1) there is no keychain access group and every `SecItemAdd` fails with -34018. The app uses the login keychain; `security find-generic-password -s app.clockin` shows the item.

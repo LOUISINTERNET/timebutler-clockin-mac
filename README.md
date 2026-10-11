@@ -85,7 +85,7 @@ read -s TIMEBUTLER_API_TOKEN && export TIMEBUTLER_API_TOKEN && make test-live
 
 ## Release
 
-Releases are built locally by the maintainer, not in CI, so the signing certificate never leaves a personal Mac. `make release` archives a Release build, signs it with the Developer ID, notarizes app and disk image, staples both and writes `dist/ClockIn-<version>.dmg`. It needs a notarization profile in the keychain, created once per Mac:
+Releases are built locally by the maintainer, not in CI, so the signing certificate never leaves a personal Mac. `make release` archives a Release build, signs it with the Developer ID, notarizes app and disk image, staples both and writes `dist/ClockIn-<version>.dmg`. It signs with the Developer ID Application certificate from Apple's G2 CA, selected by its SHA-1 in `scripts/release.sh`, `installer/ExportOptions.plist` and `project.yml`; a new certificate means updating all three. It needs a notarization profile in the keychain, created once per Mac; the password is an app-specific password of the Apple ID from account.apple.com:
 
 ```bash
 xcrun notarytool store-credentials clockin-notary --apple-id <apple-id> --team-id A5278RL7RX --password <app-specific-password>

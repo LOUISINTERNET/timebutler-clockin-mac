@@ -9,7 +9,9 @@ cd "$(dirname "$0")/.."
 export CCC_OVERRIDE_OPTIONS=x-v
 
 profile="clockin-notary"
-identity="Developer ID Application"
+# SHA-1 of the Developer ID Application certificate from the G2 CA (valid until 2031-09-17).
+# The bare name is ambiguous while the old certificate (expires 2027-02-01) is in the keychain.
+identity="DA4198799C8B6998BE4690BDADCB108F1AE397DB"
 version="$(sed -n 's/^ *MARKETING_VERSION: *"\(.*\)"/\1/p' project.yml)"
 archive="dist/ClockIn.xcarchive"
 export_dir="dist/export"
