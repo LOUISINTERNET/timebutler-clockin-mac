@@ -8,7 +8,11 @@ const path = require('node:path');
 const { test } = require('node:test');
 
 const SCRIPT = path.join(__dirname, 'update-appcast.js');
-const EMPTY_APPCAST = fs.readFileSync(path.join(__dirname, '..', 'updates', 'appcast.xml'), 'utf8');
+// The real feed without its items: the header stays in sync with updates/appcast.xml, while
+// every release adds an item there that would break the expectations below.
+const EMPTY_APPCAST = fs
+  .readFileSync(path.join(__dirname, '..', 'updates', 'appcast.xml'), 'utf8')
+  .replace(/ {4}<item>[\s\S]*?<\/item>\n/g, '');
 const PUB_DATE_LINE = /^ {6}<pubDate>[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT<\/pubDate>$/m;
 
 function exampleArguments(overrides = {}) {
