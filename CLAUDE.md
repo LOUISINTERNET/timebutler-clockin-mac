@@ -23,9 +23,9 @@ ClockIn/
   App/        AppDelegate (@main, custom main(), no nib), AppDependencies (composition root), Updater (the only file that imports Sparkle)
   API/        HTTPTransport (protocol + URLSessionTransport), TimebutlerAPI, APIError, TokenProvider, Models/
   Session/    SessionManager (actor, token refresh, keychain), OAuthClient, KeychainCredentialStore, SessionStateBroadcaster
-  Clock/      ClockStore (@MainActor @Observable) + extensions (+Session, +Actions, +Errors), PollingScheduler, LiveClock, StopResult
+  Clock/      ClockStore (@MainActor @Observable) + extensions (+Session, +Actions, +Errors, +Reconnect), PollingScheduler, NetworkPathSource (NWPathMonitor), LiveClock, StopResult
   Widget/     WidgetPanel (non-activating NSPanel), WidgetPanelController, SwiftUI views, WidgetButton
-  StatusBar/  StatusBarController (NSStatusItem), StatusBarMenu, StatusBarPresentation (pure)
+  StatusBar/  StatusBarController (NSStatusItem, menu on left and right click), StatusBarMenu (NSMenuDelegate, refilled per opening), StatusBarPresentation (pure)
   Settings/   SettingsWindowController, SettingsView, AccountTab, LoginFormModel/View, GeneralTab, AboutTab, LoginItemManager
   Support/    Log (os.Logger, subsystem app.clockin), Preferences (UserDefaults), DurationFormatting, AppIdentity
   Update/     UpdateState (Sparkle-free state that the status menu and the about tab read; Updater writes it)
@@ -33,6 +33,8 @@ Tests/        Swift Testing, one file per type; Support/ has the fakes, Fixtures
 ```
 
 Data flow: `PollingScheduler` → `ClockStore.refresh()` → `TimebutlerAPI` → `SessionManager.accessToken()`. Views read the store only. Errors are caught in `ClockStore` alone (`handle(_:during:)`); everything below throws.
+
+Refresh triggers: launch and session change (`ClockStore.apply`), the 60 s loop, wake, and the network path coming back (`PollingScheduler.networkPathChanged`). A refresh that fails without connection is retried after `ClockStore.defaultConnectionRetryDelays` (`ClockStore+Reconnect`, FR-C14), and the network path coming back starts that sequence over; a failed action is not retried, so its error stays visible. After a reboot the login item starts before Wi-Fi is up, which is what these two exist for.
 
 Design decisions and requirements live in `specs/clock-in-mac-app/` (gitignored, local planning). The Timebutler OpenAPI spec is at `specs/clock-in-mac-app/docs/timebutler-openapi-v2.json`.
 

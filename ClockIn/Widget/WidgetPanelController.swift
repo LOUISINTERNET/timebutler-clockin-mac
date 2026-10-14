@@ -54,8 +54,12 @@ final class WidgetPanelController {
         logger.notice("Widget hidden")
     }
 
-    /// FR-M3: bring the widget above every other window without activating the app.
-    func raise() {
+    /// FR-M3: brings a visible widget above every other window without activating the app;
+    /// a hidden widget stays hidden.
+    func raiseIfVisible() {
+        guard panel.isVisible else {
+            return
+        }
         panel.orderFrontRegardless()
     }
 

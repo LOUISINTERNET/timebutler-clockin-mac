@@ -13,18 +13,38 @@ struct TestStore {
         "time-entries/my": [.fixture(200, "time-entries")],
     ]
 
+    nonisolated static let offline = FixtureTransport.Reply.failure(TransportError(description: "-1009 offline"))
+
+    /// `running` with the given status replies in order. Every refresh also calls work summary
+    /// and time entries in parallel, so both answer once per status reply.
+    nonisolated static func routes(status: [FixtureTransport.Reply]) -> [String: [FixtureTransport.Reply]] {
+        var routes = running
+        routes["time-clock/status"] = status
+        routes["time-tracking/work-summary"] = Array(repeating: .fixture(200, "work-summary"), count: status.count)
+        routes["time-entries/my"] = Array(repeating: .fixture(200, "time-entries"), count: status.count)
+        return routes
+    }
+
     let store: ClockStore
     let transport: FixtureTransport
     let credentialStore: InMemoryCredentialStore
     let sessionManager: SessionManager
 
-    init(credentials: Credentials?, routes: [String: [FixtureTransport.Reply]] = [:]) throws {
+    init(
+        credentials: Credentials?,
+        routes: [String: [FixtureTransport.Reply]] = [:],
+        connectionRetryDelays: [Duration] = ClockStore.defaultConnectionRetryDelays
+    ) throws {
         credentialStore = InMemoryCredentialStore(credentials)
         transport = FixtureTransport(routes: routes)
         let oauthClient = OAuthClient(transport: transport, now: { Self.now })
         sessionManager = try SessionManager(credentialStore: credentialStore, oauthClient: oauthClient, now: { Self.now })
         let api = TimebutlerAPI(transport: transport, tokenProvider: sessionManager)
-        store = ClockStore(api: api, sessionManager: sessionManager, now: { Self.now })
+        store = ClockStore(api: api, sessionManager: sessionManager, connectionRetryDelays: connectionRetryDelays, now: { Self.now })
+    }
+
+    func statusRequestCount() async -> Int {
+        await transport.requestCount(pathSuffix: "time-clock/status")
     }
 
     nonisolated static func staleOAuthSession(email: String = "user@example.com") -> OAuthSession {

@@ -40,10 +40,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences: dependencies.preferences,
             updateState: updateState,
             toggleWidget: { widget.toggle() },
+            raiseWidget: { widget.raiseIfVisible() },
             openSettings: openSettings,
             checkForUpdates: checkForUpdates
         )
-        statusBar = StatusBarController(store: dependencies.store, widget: widget, menu: menu)
+        statusBar = StatusBarController(store: dependencies.store, menu: menu)
         settings = SettingsWindowController(
             store: dependencies.store,
             preferences: dependencies.preferences,

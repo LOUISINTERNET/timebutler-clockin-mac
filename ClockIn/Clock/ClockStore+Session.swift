@@ -90,6 +90,24 @@ extension ClockStore {
         await synchronizeSession()
     }
 
+    /// EC-6: a missing profile only affects the account tab, never the widget.
+    func loadProfile() async {
+        let expected = session
+        do {
+            let fetched = try await api.profile()
+            guard session == expected else {
+                return
+            }
+            profile = fetched
+        } catch {
+            logger.error("Profile failed: \(String(describing: error), privacy: .private)")
+            guard session == expected else {
+                return
+            }
+            profile = nil
+        }
+    }
+
     private func beginAuthentication() {
         isAuthenticating = true
         authError = nil

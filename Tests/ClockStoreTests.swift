@@ -97,7 +97,7 @@ struct ClockStoreTests {
         await store.perform(.pause)
         #expect(store.status?.status == .paused)
         await harness.transport.releaseHeldReply()
-        await poll.value
+        _ = await poll.value
         #expect(store.status?.status == .paused)
     }
 

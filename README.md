@@ -36,7 +36,7 @@ The app is signed with a Developer ID and notarized, so Gatekeeper opens it with
 
 ### Sign in
 
-Right-click the menu bar item, choose **Einstellungen…**, then either
+Click the menu bar item, choose **Einstellungen…**, then either
 
 - paste a **personal API token** (create one in Timebutler under *Einstellungen › Dein Konto › API-Token*, or open <https://app.timebutler.com/do?ha=personaltoken&ac=6>), or
 - sign in with **e-mail and password**; accounts with two-factor authentication are asked for the six-digit authenticator code.
@@ -49,8 +49,8 @@ The widget shows the clock state (Gestoppt, Arbeit, Pause, Wartet), the running 
 
 ### Menu bar
 
-- Left click brings the widget to the front, and shows it if it was hidden.
-- Right click opens the menu: show or hide the widget, refresh now, check for updates, settings (⌘,), quit (⌘Q).
+- A left or right click opens the menu: show or hide the widget, refresh now, check for updates, settings (⌘,), quit (⌘Q).
+- Opening the menu also brings a visible widget to the front, for when other windows may cover it.
 
 ### Settings
 

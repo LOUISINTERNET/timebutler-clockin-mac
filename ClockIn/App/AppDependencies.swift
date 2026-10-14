@@ -12,7 +12,7 @@ struct AppDependencies {
         let sessionManager = try SessionManager(credentialStore: KeychainCredentialStore(), oauthClient: OAuthClient(transport: transport))
         let api = TimebutlerAPI(transport: transport, tokenProvider: sessionManager)
         store = ClockStore(api: api, sessionManager: sessionManager)
-        scheduler = PollingScheduler(store: store)
+        scheduler = PollingScheduler(store: store, networkPaths: SystemNetworkPathSource())
         preferences = Preferences()
     }
 }

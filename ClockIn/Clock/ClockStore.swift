@@ -36,6 +36,10 @@ final class ClockStore {
     let sessionManager: SessionManager
     let now: @Sendable () -> Date
     let logger = Log.logger(.clock)
+    /// The waits before each retry after a refresh that found no connection (FR-C14).
+    let connectionRetryDelays: [Duration]
+    var connectionRetry: Task<Void, Never>?
+    var connectionRetryAttempt = 0
     private var stateObservation: Task<Void, Never>?
     private var applyingState: SessionState?
     private var applyTask: Task<Void, Never>?
@@ -43,9 +47,15 @@ final class ClockStore {
     /// arrived meanwhile.
     private var fetchVersion = 0
 
-    init(api: TimebutlerAPI, sessionManager: SessionManager, now: @escaping @Sendable () -> Date = Date.init) {
+    init(
+        api: TimebutlerAPI,
+        sessionManager: SessionManager,
+        connectionRetryDelays: [Duration] = ClockStore.defaultConnectionRetryDelays,
+        now: @escaping @Sendable () -> Date = Date.init
+    ) {
         self.api = api
         self.sessionManager = sessionManager
+        self.connectionRetryDelays = connectionRetryDelays
         self.now = now
     }
 
@@ -73,12 +83,14 @@ final class ClockStore {
 
     /// Loads status and work summary in parallel (FR-C1). A failing summary keeps the
     /// previous one and only logs (FR-C13); a failing status is reported via `lastError`.
-    /// Results that arrive after the session changed are dropped.
-    func refresh() async {
+    /// Results that arrive after the session changed are dropped. Returns whether this call
+    /// adopted a status.
+    @discardableResult
+    func refresh() async -> Bool {
         let expected = session
         guard expected.isActive else {
             logger.info("Refresh skipped, no active session")
-            return
+            return false
         }
         var version = fetchVersion
         async let statusCall = api.status()
@@ -88,22 +100,22 @@ final class ClockStore {
             let fetchedStatus = try await statusCall
             guard session == expected, fetchVersion == version else {
                 logger.notice("Dropping a status answer that was overtaken by a newer one")
-                return
+                return false
             }
             adopt(status: fetchedStatus)
             version = fetchVersion
             lastError = nil
         } catch {
             guard session == expected else {
-                return
+                return false
             }
             await handle(error, during: nil)
-            return
+            return false
         }
         do {
             let fetchedSummary = try await summaryCall
             guard session == expected, fetchVersion == version else {
-                return
+                return true
             }
             adopt(summary: fetchedSummary)
         } catch {
@@ -112,37 +124,22 @@ final class ClockStore {
         do {
             let entries = try await entriesCall
             guard session == expected else {
-                return
+                return true
             }
             firstStartToday = DayStart.firstStart(entries: entries, today: DayStart.dayString(for: now()))
         } catch {
             logger.error("Time entries failed, keeping the previous day start: \(String(describing: error), privacy: .private)")
         }
-    }
-
-    /// EC-6: a missing profile only affects the account tab, never the widget.
-    func loadProfile() async {
-        let expected = session
-        do {
-            let fetched = try await api.profile()
-            guard session == expected else {
-                return
-            }
-            profile = fetched
-        } catch {
-            logger.error("Profile failed: \(String(describing: error), privacy: .private)")
-            guard session == expected else {
-                return
-            }
-            profile = nil
-        }
+        return true
     }
 
     /// The write paths for fetched values; every fetch checks `fetchVersion` before calling them.
+    /// A status that arrived proves the connection, so it also ends a waiting connection retry.
     func adopt(status fetched: TimeClockStatus) {
         status = fetched
         fetchedAt = now()
         fetchVersion += 1
+        resetConnectionRetry()
         logger.notice("Status \(fetched.status.rawValue, privacy: .public): work \(fetched.workTimeElapsedSeconds, privacy: .public) s, break \(fetched.breakElapsedSeconds, privacy: .public) s, accumulated break \(fetched.accumulatedBreakSeconds, privacy: .public) s")
     }
 
@@ -186,6 +183,7 @@ final class ClockStore {
 
     private func perform(_ state: SessionState) async {
         session = state
+        resetConnectionRetry()
         logger.notice("Session is now \(String(describing: state), privacy: .private)")
         if state.isActive {
             authError = nil

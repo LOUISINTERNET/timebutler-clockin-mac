@@ -3,9 +3,11 @@ import Foundation
 /// The one place that turns thrown errors into `lastError` and follow-up actions (D10).
 extension ClockStore {
     /// Records the German message in `lastError` and performs the follow-up the
-    /// requirements demand for the failure (FR-C10, FR-C12, FR-S5). After a failed action
-    /// the server may have changed state anyway (an answer that could not be decoded, a
-    /// conflict), so the status is reloaded unless the request never reached the server.
+    /// requirements demand for the failure (FR-C10, FR-C12, FR-C14, FR-S5). After a failed
+    /// action the server may have changed state anyway (an answer that could not be decoded,
+    /// a conflict), so the status is reloaded unless the request never reached the server.
+    /// A refresh without connection is retried soon; a failed action is not, because the
+    /// retry's refresh would clear the action's error.
     func handle(_ error: any Error, during action: ClockAction?) async {
         if error is CancellationError {
             logger.notice("Call cancelled by a session change")
@@ -21,6 +23,8 @@ extension ClockStore {
             await reloadStatusAfterActionFailure()
         case SessionError.expired:
             await synchronizeSession()
+        case APIError.transport where action == nil, SessionError.transport where action == nil:
+            scheduleConnectionRetry()
         default:
             break
         }

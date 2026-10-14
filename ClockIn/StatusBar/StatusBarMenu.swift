@@ -1,13 +1,15 @@
 import AppKit
 
-/// The right-click menu of the status item (FR-M4, update entry FR-2 to FR-4). Window-free,
-/// so its contents are tested.
+/// The menu of the status item for left and right click (FR-M3, FR-M4, update entry FR-2 to
+/// FR-4). As the menu's delegate it refills the items before every opening, so titles and
+/// enabled states are current. Window-free, so its contents are tested.
 @MainActor
-final class StatusBarMenu: NSObject {
+final class StatusBarMenu: NSObject, NSMenuDelegate {
     private let store: ClockStore
     private let preferences: Preferences
     private let updateState: UpdateState
     private let toggleWidget: () -> Void
+    private let raiseWidget: () -> Void
     private let openSettings: () -> Void
     private let checkForUpdates: () -> Void
     private let logger = Log.logger(.statusBar)
@@ -17,6 +19,7 @@ final class StatusBarMenu: NSObject {
         preferences: Preferences,
         updateState: UpdateState,
         toggleWidget: @escaping () -> Void,
+        raiseWidget: @escaping () -> Void,
         openSettings: @escaping () -> Void,
         checkForUpdates: @escaping () -> Void
     ) {
@@ -24,12 +27,13 @@ final class StatusBarMenu: NSObject {
         self.preferences = preferences
         self.updateState = updateState
         self.toggleWidget = toggleWidget
+        self.raiseWidget = raiseWidget
         self.openSettings = openSettings
         self.checkForUpdates = checkForUpdates
     }
 
-    func build() -> NSMenu {
-        let menu = NSMenu()
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
         menu.autoenablesItems = false
         menu.addItem(item(preferences.widgetVisible ? "Widget ausblenden" : "Widget einblenden", #selector(toggleWidgetItem), key: ""))
         let refresh = item("Jetzt aktualisieren", #selector(refreshNow), key: "")
@@ -44,7 +48,12 @@ final class StatusBarMenu: NSObject {
         let quit = NSMenuItem(title: "\(AppIdentity.displayName) beenden", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.target = NSApp
         menu.addItem(quit)
-        return menu
+    }
+
+    /// FR-W9: without "Immer im Vordergrund" other windows may cover the widget; a click on
+    /// the menu bar item brings it back to the front.
+    func menuWillOpen(_ menu: NSMenu) {
+        raiseWidget()
     }
 
     private func item(_ title: String, _ action: Selector, key: String) -> NSMenuItem {
